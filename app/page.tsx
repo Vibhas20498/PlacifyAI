@@ -67,13 +67,13 @@ export default function LandingPage() {
             Download Spec Dossier
           </a>
           <Link
-            href="/dashboard"
+            href="/login"
             className="text-sm font-medium text-gray-700 hover:text-black transition-colors"
           >
             Log in
           </Link>
           <Link
-            href="/dashboard"
+            href="/register"
             className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm"
           >
             Get started
@@ -105,14 +105,14 @@ export default function LandingPage() {
 
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <Link
-                href="/dashboard"
+                href="/register"
                 className="px-6 py-3.5 rounded-xl bg-black text-white text-sm font-semibold hover:bg-gray-800 transition-all flex items-center gap-2 group shadow-sm"
               >
                 <span>Analyze My Career</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
-                href="/dashboard"
+                href="/login"
                 className="px-6 py-3.5 rounded-xl border border-gray-300 text-black text-sm font-semibold hover:bg-gray-100 transition-all"
               >
                 I have an account
