@@ -9,10 +9,10 @@ import { useUser } from '@/lib/store/user-context';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { updateProfile } = useUser();
+  const { updateProfile, setSessionProfile } = useUser();
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [name, setName] = useState('Vibhas Kadam');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [targetRole, setTargetRole] = useState('Fullstack Software Engineer');
   const [otp, setOtp] = useState('');
@@ -50,7 +50,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name, targetRole }),
+        body: JSON.stringify({ email, name, targetRole, purpose: 'registration' }),
       });
 
       const data = await res.json();
@@ -95,15 +95,46 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Verification failed. Please try again.');
       }
 
-      // Update client-side user context
-      updateProfile({
-        name: data.user?.name || name,
-        email: data.user?.email || email,
-        targetRole: data.user?.targetRole || targetRole,
+      const dbProf = data.profile || {};
+      const isConfigured = Boolean(
+        data.isOnboarded &&
+        dbProf.university &&
+        dbProf.university !== 'Engineering Institution' &&
+        Number(dbProf.cgpa) > 0
+      );
+
+      // Completely set fresh clean session for this candidate (no merging with previous local data)
+      setSessionProfile({
+        id: dbProf.id || '',
+        name: data.user?.name || name || dbProf.name || '',
+        email: data.user?.email || email || dbProf.email || '',
+        avatarUrl: '',
+        targetRole: data.user?.targetRole || targetRole || dbProf.target_role || 'Fullstack Software Engineer',
+        university: isConfigured ? dbProf.university : '',
+        degree: isConfigured ? (dbProf.degree || '') : '',
+        cgpa: isConfigured ? (Number(dbProf.cgpa) || 0) : 0,
+        tier: (Number(dbProf.tier) as 1 | 2 | 3) || 2,
+        graduationYear: Number(dbProf.graduation_year) || 2026,
+        experienceMonths: Number(dbProf.experience_months) || 0,
+        githubUrl: isConfigured ? (dbProf.github_url || '') : '',
+        linkedinUrl: isConfigured ? (dbProf.linkedin_url || '') : '',
+        verifiedSkills: isConfigured && Array.isArray(dbProf.verified_skills) ? dbProf.verified_skills : [],
+        pendingSkills: isConfigured && Array.isArray(dbProf.pending_skills) ? dbProf.pending_skills : [],
+        projectsCount: isConfigured ? (Number(dbProf.projects_count) || 0) : 0,
+        hasProductionDeployment: isConfigured ? Boolean(dbProf.has_production_deployment) : false,
+        codeSignalScore: isConfigured ? (Number(dbProf.code_signal_score) || 0) : 0,
+        resumeAtsScore: isConfigured ? (Number(dbProf.resume_ats_score) || 0) : 0,
+        placementProbability: isConfigured ? (Number(dbProf.placement_probability) || 0) : 0,
+        careerReadinessScore: isConfigured ? (Number(dbProf.career_readiness_score) || 0) : 0,
+        isOnboarded: isConfigured,
       });
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // If user has not completed onboarding, guide them to setup wizard
+      if (isConfigured) {
+        router.push('/dashboard');
+      } else {
+        router.push('/onboarding');
+      }
     } catch (err: any) {
       setErrorMsg(err.message || 'Invalid or expired verification code.');
     } finally {

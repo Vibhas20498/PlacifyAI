@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, name = 'Candidate', targetRole = 'Fullstack Software Engineer' } = body;
+    const { email, name = 'Candidate', targetRole = 'Fullstack Software Engineer', purpose = 'registration' } = body;
 
     if (!email || !email.includes('@')) {
       return NextResponse.json(
@@ -15,6 +15,38 @@ export async function POST(request: Request) {
     }
 
     const cleanEmail = email.toLowerCase().trim();
+
+    // Check if account already exists in Supabase
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      try {
+        const supabase = createAdminClient();
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id, email, name, university, cgpa')
+          .eq('email', cleanEmail)
+          .single();
+
+        if (purpose === 'registration') {
+          // If already registered and configured
+          if (existingProfile && existingProfile.university && existingProfile.university !== 'Engineering Institution' && Number(existingProfile.cgpa) > 0) {
+            return NextResponse.json(
+              { error: 'An account with this email address already exists. Please log in instead.' },
+              { status: 409 }
+            );
+          }
+        } else if (purpose === 'login') {
+          if (!existingProfile) {
+            return NextResponse.json(
+              { error: 'No account found with this email address. Please create an account first.' },
+              { status: 404 }
+            );
+          }
+        }
+      } catch (dbCheckErr) {
+        console.warn('[Supabase Account Check Warning]:', dbCheckErr);
+      }
+    }
+
     const otp = generateOtpCode();
 
     // 1. Send OTP via our high-reliability email dispatcher (Nodemailer / Free SMTP)
@@ -24,11 +56,11 @@ export async function POST(request: Request) {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       try {
         const supabase = createAdminClient();
-        // Record metadata in Supabase otps table if table exists
+        // Record metadata in Supabase otps table
         await supabase.from('otps').insert({
           email: cleanEmail,
           hashed_otp: otp,
-          purpose: 'registration',
+          purpose: purpose,
           metadata: { name, targetRole },
           expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
         });

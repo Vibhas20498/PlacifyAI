@@ -48,28 +48,31 @@ export async function POST(request: Request) {
           .eq('email', cleanEmail)
           .single();
 
+        let isOnboarded = false;
+
         if (existingProfile) {
           profileData = existingProfile;
+          isOnboarded = existingProfile.is_onboarded ?? (Boolean(existingProfile.university) && existingProfile.cgpa > 0);
         } else {
-          // Upsert new profile record
+          // Upsert new profile record for newly registered candidate
           const { data: newProfile, error: profileErr } = await supabase
             .from('profiles')
             .upsert({
               email: cleanEmail,
               name: userName,
               target_role: userRole,
-              cgpa: 8.4,
-              university: 'Engineering Institution',
-              tier: 1,
+              cgpa: 0, // Unconfigured
+              university: '',
+              tier: 2,
               graduation_year: 2026,
-              verified_skills: ['Python', 'SQL', 'TypeScript', 'React', 'FastAPI'],
-              pending_skills: ['Docker', 'Redis', 'System Design'],
-              projects_count: 3,
-              has_production_deployment: true,
-              code_signal_score: 700,
-              resume_ats_score: 75,
-              placement_probability: 78,
-              career_readiness_score: 82,
+              verified_skills: [],
+              pending_skills: [],
+              projects_count: 0,
+              has_production_deployment: false,
+              code_signal_score: 500,
+              resume_ats_score: 50,
+              placement_probability: 50,
+              career_readiness_score: 50,
             })
             .select()
             .single();
@@ -77,7 +80,10 @@ export async function POST(request: Request) {
           if (newProfile) {
             profileData = newProfile;
           }
+          isOnboarded = false;
         }
+
+        profileData.isOnboarded = isOnboarded;
       } catch (dbErr) {
         console.warn('[Supabase Profile Provisioning Warning]:', dbErr);
       }
@@ -91,6 +97,7 @@ export async function POST(request: Request) {
         name: userName,
         targetRole: userRole,
       },
+      isOnboarded: Boolean(profileData?.isOnboarded),
       profile: profileData,
     });
   } catch (error: any) {

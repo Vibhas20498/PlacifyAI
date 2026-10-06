@@ -6,6 +6,7 @@ export interface UserProfile {
   targetRole: string;
   cgpa: number;
   university: string;
+  degree?: string;
   tier: 1 | 2 | 3;
   graduationYear: number;
   experienceMonths: number;
@@ -19,6 +20,7 @@ export interface UserProfile {
   resumeAtsScore: number;
   placementProbability: number;
   careerReadinessScore: number;
+  isOnboarded?: boolean;
 }
 
 export interface StatMetric {

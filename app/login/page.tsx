@@ -9,7 +9,7 @@ import { useUser } from '@/lib/store/user-context';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { updateProfile } = useUser();
+  const { updateProfile, setSessionProfile } = useUser();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
@@ -91,17 +91,46 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login verification failed.');
       }
 
-      // Update client-side user context
-      if (data.user) {
-        updateProfile({
-          name: data.user.name,
-          email: data.user.email,
-          targetRole: data.user.targetRole,
-        });
-      }
+      const dbProf = data.profile || {};
+      const isConfigured = Boolean(
+        data.isOnboarded &&
+        dbProf.university &&
+        dbProf.university !== 'Engineering Institution' &&
+        Number(dbProf.cgpa) > 0
+      );
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Cleanly set fresh authenticated session for this login
+      setSessionProfile({
+        id: dbProf.id || '',
+        name: data.user?.name || dbProf.name || 'Candidate',
+        email: data.user?.email || email || dbProf.email || '',
+        avatarUrl: '',
+        targetRole: data.user?.targetRole || dbProf.target_role || 'Fullstack Software Engineer',
+        university: isConfigured ? dbProf.university : '',
+        degree: isConfigured ? (dbProf.degree || '') : '',
+        cgpa: isConfigured ? (Number(dbProf.cgpa) || 0) : 0,
+        tier: (Number(dbProf.tier) as 1 | 2 | 3) || 2,
+        graduationYear: Number(dbProf.graduation_year) || 2026,
+        experienceMonths: Number(dbProf.experience_months) || 0,
+        githubUrl: isConfigured ? (dbProf.github_url || '') : '',
+        linkedinUrl: isConfigured ? (dbProf.linkedin_url || '') : '',
+        verifiedSkills: isConfigured && Array.isArray(dbProf.verified_skills) ? dbProf.verified_skills : [],
+        pendingSkills: isConfigured && Array.isArray(dbProf.pending_skills) ? dbProf.pending_skills : [],
+        projectsCount: isConfigured ? (Number(dbProf.projects_count) || 0) : 0,
+        hasProductionDeployment: isConfigured ? Boolean(dbProf.has_production_deployment) : false,
+        codeSignalScore: isConfigured ? (Number(dbProf.code_signal_score) || 0) : 0,
+        resumeAtsScore: isConfigured ? (Number(dbProf.resume_ats_score) || 0) : 0,
+        placementProbability: isConfigured ? (Number(dbProf.placement_probability) || 0) : 0,
+        careerReadinessScore: isConfigured ? (Number(dbProf.career_readiness_score) || 0) : 0,
+        isOnboarded: isConfigured,
+      });
+
+      // If user has not completed onboarding, guide them to setup wizard
+      if (isConfigured) {
+        router.push('/dashboard');
+      } else {
+        router.push('/onboarding');
+      }
     } catch (err: any) {
       setErrorMsg(err.message || 'Invalid or expired login code.');
     } finally {

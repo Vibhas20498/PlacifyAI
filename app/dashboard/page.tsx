@@ -43,6 +43,34 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Incomplete Profile Setup Protocol Banner */}
+        {(!profile.isOnboarded || !profile.university || profile.university === 'Engineering Institution') && (
+          <div className="bg-black text-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-black">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="text-xs font-mono font-bold tracking-wider uppercase text-gray-300">
+                  Action Required: Candidate Onboarding
+                </span>
+              </div>
+              <h3 className="text-lg font-bold tracking-tight text-white">
+                Complete Your Candidate Profile Setup
+              </h3>
+              <p className="text-xs text-gray-300 max-w-xl">
+                Configure your college credentials, verified technical skills, and algorithmic benchmarks to calibrate your personalized XGBoost placement probability.
+              </p>
+            </div>
+
+            <Link
+              href="/onboarding"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-semibold text-xs hover:bg-gray-100 transition-all shrink-0 self-start md:self-auto shadow-md"
+            >
+              <span>Launch 4-Step Setup Wizard</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        )}
+
         {/* Readiness Overview 4-Card Grid */}
         <section className="space-y-4">
           <div>

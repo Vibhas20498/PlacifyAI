@@ -6,7 +6,7 @@ import { Bell, ChevronDown, Sparkles, CheckCircle2, User, Sliders } from 'lucide
 import { useUser } from '@/lib/store/user-context';
 
 export function Topbar() {
-  const { profile, unreadNotificationsCount, updateProfile } = useUser();
+  const { profile, unreadNotificationsCount, updateProfile, clearSession } = useUser();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -103,6 +103,14 @@ export function Topbar() {
                 Career Profile
               </Link>
               <Link
+                href="/onboarding"
+                onClick={() => setShowUserMenu(false)}
+                className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Setup Profile Wizard
+              </Link>
+              <Link
                 href="/what-if"
                 onClick={() => setShowUserMenu(false)}
                 className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
@@ -111,12 +119,17 @@ export function Topbar() {
                 What-If Workbench
               </Link>
               <div className="pt-2 mt-1 border-t border-gray-100">
-                <Link
-                  href="/"
-                  className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-600 hover:bg-gray-50 rounded-lg transition-colors"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    clearSession();
+                    window.location.href = '/';
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-600 hover:bg-gray-50 rounded-lg transition-colors text-left"
                 >
-                  Sign Out to Landing
-                </Link>
+                  Sign Out / Switch Account
+                </button>
               </div>
             </div>
           )}

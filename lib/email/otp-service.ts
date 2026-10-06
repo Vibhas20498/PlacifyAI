@@ -86,7 +86,7 @@ export async function verifyStoredOtp(email: string, otp: string): Promise<{ val
 /**
  * Send Swiss-Monochrome Styled HTML Email via Free SMTP (Nodemailer)
  */
-export async function sendOtpEmail(email: string, otp: string, userName: string = 'Candidate'): Promise<{ success: boolean; devMode?: boolean; previewCode?: string }> {
+export async function sendOtpEmail(email: string, otp: string, userName: string = 'Candidate'): Promise<{ success: boolean; devMode?: boolean; previewCode?: string; emailSent?: boolean }> {
   const cleanEmail = email.toLowerCase().trim();
 
   // Store OTP token
