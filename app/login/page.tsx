@@ -161,7 +161,7 @@ export default function LoginPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md bg-white border border-gray-200 rounded-3xl p-8 sm:p-10 shadow-sm space-y-6">
           <div className="space-y-2 text-center">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-200 bg-gray-50 text-[11px] font-mono font-medium text-gray-700 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-200 bg-gray-50 text-xs font-medium text-gray-700 mb-2">
               <ShieldCheck className="w-3.5 h-3.5 text-black" />
               <span>Passwordless Sign In</span>
             </div>
@@ -185,12 +185,12 @@ export default function LoginPage() {
           {/* Dev Mode Code Preview Alert */}
           {devCodePreview && step === 2 && (
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-800 space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-black font-mono">
+              <div className="flex items-center gap-1.5 font-bold text-black">
                 <Info className="w-3.5 h-3.5 text-black" />
                 <span>Development Mode Preview:</span>
               </div>
-              <p className="font-mono text-xs">
-                Your OTP code is <strong className="text-black text-sm tracking-widest bg-white px-2 py-0.5 rounded border border-gray-300">{devCodePreview}</strong>
+              <p className="text-xs text-gray-600">
+                Your OTP code is <strong className="text-black text-sm tracking-widest bg-white px-2 py-0.5 rounded border border-gray-300 font-mono">{devCodePreview}</strong>
               </p>
             </div>
           )}
@@ -288,7 +288,7 @@ export default function LoginPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 py-6 px-6 sm:px-12 text-center text-xs text-gray-400 font-mono">
+      <footer className="border-t border-gray-200 py-6 px-6 sm:px-12 text-center text-xs text-gray-500">
         PlacifyAI — Passwordless Authentication System.
       </footer>
     </div>

@@ -41,7 +41,7 @@ export default function LandingPage() {
     {
       num: '04',
       title: 'Predict Placement & Simulate',
-      desc: 'Calculate calibrated placement probability with SHAP factor breakdown and What-If simulation.',
+      desc: 'Calculate calibrated placement probability with multi-factor breakdown and What-If simulation.',
       icon: TrendingUp,
     },
   ];
@@ -119,7 +119,7 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            <div className="text-xs text-gray-400 font-mono pt-1">
+            <div className="text-xs text-gray-500 font-medium pt-1">
               Estimates only — not a guarantee of employment.
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function LandingPage() {
           {/* Right Column: Signature Node-Path Diagram Graphic */}
           <div className="lg:col-span-5 flex justify-center lg:justify-end">
             <div className="p-6 bg-gray-50/60 rounded-3xl border border-gray-200/80 shadow-sm w-full max-w-[460px]">
-              <div className="flex items-center justify-between text-xs font-mono text-gray-500 pb-2 border-b border-gray-200 mb-2">
+              <div className="flex items-center justify-between text-xs text-gray-500 pb-2 border-b border-gray-200 mb-2 font-medium">
                 <span>01 // JOURNEY ARCHITECTURE</span>
                 <span className="text-black font-semibold">Active Pipeline</span>
               </div>
@@ -159,13 +159,13 @@ export default function LandingPage() {
             return (
               <div key={step.num} className="relative group">
                 {/* Node circle on timeline */}
-                <div className="absolute -left-[45px] sm:-left-[61px] top-4 w-9 h-9 rounded-full bg-white border-2 border-black flex items-center justify-center text-black font-mono text-xs font-bold shadow-sm">
+                <div className="absolute -left-[45px] sm:-left-[61px] top-4 w-9 h-9 rounded-full bg-white border-2 border-black flex items-center justify-center text-black text-xs font-bold shadow-sm">
                   <Icon className="w-4 h-4 text-black" />
                 </div>
 
                 {/* Step Card */}
                 <div className="bg-white border border-gray-200 group-hover:border-black rounded-2xl p-6 sm:p-7 transition-all duration-200">
-                  <div className="font-mono text-xs text-gray-400 font-semibold mb-1">
+                  <div className="text-xs text-gray-400 font-semibold mb-1">
                     {step.num}
                   </div>
                   <h3 className="text-xl font-bold text-black mb-2 tracking-tight">
@@ -185,14 +185,14 @@ export default function LandingPage() {
       <section className="px-6 sm:px-12 py-20 bg-gray-50 border-t border-b border-gray-200">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-            <span className="text-xs font-mono uppercase tracking-widest text-gray-500 font-semibold">
+            <span className="text-xs uppercase tracking-widest text-gray-500 font-semibold">
               Precision Tooling
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-black">
               Scientific Intelligence Engine
             </h2>
             <p className="text-sm sm:text-base text-gray-600">
-              Deterministic machine learning and vector retrieval built for measurable career progress.
+              Deterministic predictive analytics and vector retrieval built for measurable career progress.
             </p>
           </div>
 
@@ -201,9 +201,9 @@ export default function LandingPage() {
               <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-black" />
               </div>
-              <h4 className="text-lg font-bold text-black">XGBoost ML Probability</h4>
+              <h4 className="text-lg font-bold text-black">Calibrated Placement Analytics</h4>
               <p className="text-xs text-gray-600 leading-relaxed">
-                Calculates calibrated probability with SHAP factor explainability decomposed into positive and negative drivers.
+                Calculates calibrated placement probability with granular factor attribution decomposed into positive drivers and bottlenecks.
               </p>
             </div>
 
@@ -250,11 +250,11 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 py-10 px-6 sm:px-12 max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500 font-mono">
+      <footer className="border-t border-gray-200 py-10 px-6 sm:px-12 max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-black" />
           <span className="font-sans font-bold text-black">Placify AI</span>
-          <span>© 2026. Swiss Editorial Career Intelligence.</span>
+          <span>© 2026. Precision Career Intelligence.</span>
         </div>
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="hover:text-black">Dashboard</Link>

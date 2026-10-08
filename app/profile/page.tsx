@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { useUser } from '@/lib/store/user-context';
+import { ResumeUploadDropzone } from '@/components/resume/ResumeUploadDropzone';
 import {
   User,
   Save,
@@ -21,6 +22,8 @@ import {
   Sliders,
   TrendingUp,
   Database,
+  FileText,
+  UploadCloud,
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -68,6 +71,31 @@ export default function ProfilePage() {
     }));
   };
 
+  const handleResumeParsed = (extracted: any, analysis: any) => {
+    setFormData((prev) => {
+      const mergedSkills = Array.from(new Set([...prev.verifiedSkills, ...(extracted.skills || [])]));
+      return {
+        ...prev,
+        name: prev.name || extracted.name || '',
+        university: prev.university || extracted.university || '',
+        degree: prev.degree || extracted.degree || '',
+        cgpa: prev.cgpa > 0 ? prev.cgpa : (extracted.cgpa || 0),
+        tier: extracted.tier || prev.tier,
+        graduationYear: extracted.graduationYear || prev.graduationYear,
+        experienceMonths: extracted.experienceMonths || prev.experienceMonths,
+        verifiedSkills: mergedSkills,
+        projectsCount: extracted.projectsCount || prev.projectsCount,
+        hasProductionDeployment: extracted.hasProductionDeployment ?? prev.hasProductionDeployment,
+        githubUrl: prev.githubUrl || extracted.githubUrl || '',
+        linkedinUrl: prev.linkedinUrl || extracted.linkedinUrl || '',
+        resumeAtsScore: analysis?.overallScore || prev.resumeAtsScore,
+      };
+    });
+    if (analysis?.overallScore) {
+      updateProfile({ resumeAtsScore: analysis.overallScore }, false);
+    }
+  };
+
   return (
     <AppShell>
       <div className="space-y-8 max-w-4xl pb-12">
@@ -78,7 +106,7 @@ export default function ProfilePage() {
               <h1 className="text-3xl font-bold tracking-tight text-black">
                 Candidate Career Profile
               </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-gray-100 border border-gray-200 text-black">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 border border-gray-200 text-black">
                 <Database className="w-3 h-3 text-black" />
                 Supabase Synced
               </span>
@@ -118,35 +146,59 @@ export default function ProfilePage() {
         {/* Live Placement Metrics Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50 border border-gray-200 rounded-2xl p-5">
           <div className="space-y-1">
-            <span className="text-[11px] font-mono font-semibold text-gray-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Calibrated Probability
             </span>
-            <div className="text-2xl font-bold font-mono text-black">
+            <div className="text-2xl font-bold tracking-tight text-black">
               {profile.placementProbability}%
             </div>
           </div>
           <div className="space-y-1">
-            <span className="text-[11px] font-mono font-semibold text-gray-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Career Readiness Index
             </span>
-            <div className="text-2xl font-bold font-mono text-black">
+            <div className="text-2xl font-bold tracking-tight text-black">
               {profile.careerReadinessScore}/100
             </div>
           </div>
           <div className="space-y-1">
-            <span className="text-[11px] font-mono font-semibold text-gray-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Verified Skills Count
             </span>
-            <div className="text-2xl font-bold font-mono text-black">
-              {profile.verifiedSkills.length} Competencies
+            <div className="text-2xl font-bold tracking-tight text-black">
+              {formData.verifiedSkills.length} Competencies
             </div>
           </div>
+        </div>
+
+        {/* SECTION 00: Resume Document & ATS Parser */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-700">
+              <FileText className="w-4 h-4 text-black" />
+              <span>00 // Active Resume & ATS Calibration</span>
+            </div>
+            <span className="text-xs font-bold text-black bg-gray-100 px-2.5 py-0.5 rounded-full">
+              ATS Score: {formData.resumeAtsScore}/100
+            </span>
+          </div>
+
+          <p className="text-xs text-gray-500">
+            Upload your latest Resume / CV to auto-refresh your verified competencies and calibrate your ATS metrics.
+          </p>
+
+          <ResumeUploadDropzone
+            compact
+            targetRole={formData.targetRole}
+            userEmail={formData.email}
+            onParsed={handleResumeParsed}
+          />
         </div>
 
         <form onSubmit={handleSave} className="space-y-8">
           {/* SECTION 01: Personal & Academic Credentials */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-gray-500 pb-3 border-b border-gray-100">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-700 pb-3 border-b border-gray-100">
               <GraduationCap className="w-4 h-4 text-black" />
               <span>01 // Academic & Personal Credentials</span>
             </div>
@@ -174,7 +226,7 @@ export default function ProfilePage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs bg-gray-50 font-mono text-gray-700 outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs bg-gray-50 text-gray-700 outline-none"
                 />
               </div>
 
@@ -201,7 +253,7 @@ export default function ProfilePage() {
                     required
                     value={formData.cgpa}
                     onChange={(e) => setFormData({ ...formData, cgpa: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-mono font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                   />
                 </div>
 
@@ -227,7 +279,7 @@ export default function ProfilePage() {
                     required
                     value={formData.graduationYear}
                     onChange={(e) => setFormData({ ...formData, graduationYear: parseInt(e.target.value) || 2026 })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-mono font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                   />
                 </div>
 
@@ -239,7 +291,7 @@ export default function ProfilePage() {
                     max="60"
                     value={formData.experienceMonths}
                     onChange={(e) => setFormData({ ...formData, experienceMonths: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-mono font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                   />
                 </div>
               </div>
@@ -248,7 +300,7 @@ export default function ProfilePage() {
 
           {/* SECTION 02: Target Role & Technical Benchmarks */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-gray-500 pb-3 border-b border-gray-100">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-700 pb-3 border-b border-gray-100">
               <Briefcase className="w-4 h-4 text-black" />
               <span>02 // Target Role & Technical Benchmarks</span>
             </div>
@@ -277,7 +329,7 @@ export default function ProfilePage() {
                   max="850"
                   value={formData.codeSignalScore}
                   onChange={(e) => setFormData({ ...formData, codeSignalScore: parseInt(e.target.value) || 600 })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-mono font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                 />
               </div>
 
@@ -289,7 +341,7 @@ export default function ProfilePage() {
                   max="10"
                   value={formData.projectsCount}
                   onChange={(e) => setFormData({ ...formData, projectsCount: parseInt(e.target.value) || 0 })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-mono font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                 />
               </div>
 
@@ -301,7 +353,7 @@ export default function ProfilePage() {
                   max="100"
                   value={formData.resumeAtsScore}
                   onChange={(e) => setFormData({ ...formData, resumeAtsScore: parseInt(e.target.value) || 65 })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-mono font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                 />
               </div>
 
@@ -317,8 +369,8 @@ export default function ProfilePage() {
                     <div className="text-xs font-bold text-black">
                       Verified Production Deployment & Automated CI/CD
                     </div>
-                    <div className="text-[11px] text-gray-500">
-                      Projects feature public live URLs, Docker containers, and GitHub Actions pipelines (+8% ML probability boost).
+                    <div className="text-xs text-gray-500">
+                      Projects feature public live URLs, Docker containers, and GitHub Actions pipelines (+8% probability boost).
                     </div>
                   </div>
                 </label>
@@ -328,7 +380,7 @@ export default function ProfilePage() {
 
           {/* SECTION 03: Portfolio Links & External Handles */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-gray-500 pb-3 border-b border-gray-100">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-700 pb-3 border-b border-gray-100">
               <Globe className="w-4 h-4 text-black" />
               <span>03 // Portfolio & Repositories</span>
             </div>
@@ -367,11 +419,11 @@ export default function ProfilePage() {
           {/* SECTION 04: Skills Inventory */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-gray-500">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-700">
                 <Code className="w-4 h-4 text-black" />
                 <span>04 // Verified Technical Skills Inventory</span>
               </div>
-              <span className="text-xs font-mono text-gray-400">
+              <span className="text-xs text-gray-500 font-medium">
                 {formData.verifiedSkills.length} competencies
               </span>
             </div>

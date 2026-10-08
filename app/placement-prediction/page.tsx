@@ -3,13 +3,13 @@
 import React from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { useUser } from '@/lib/store/user-context';
-import { calculatePlacementProbability } from '@/lib/ml-engine';
+import { calculatePlacementProbability } from '@/lib/scoring';
 import { TrendingUp, PlusCircle, MinusCircle, SlidersHorizontal, Info, ShieldCheck, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PlacementPredictionPage() {
   const { profile } = useUser();
-  const mlResult = calculatePlacementProbability(profile);
+  const evaluation = calculatePlacementProbability(profile);
 
   return (
     <AppShell>
@@ -18,10 +18,10 @@ export default function PlacementPredictionPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-black">
-              ML Placement Probability & SHAP Attribution
+              Placement Probability & Factor Attribution
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Deterministic, explainable predictive analytics powered by calibrated XGBoost ensemble modeling.
+              Deterministic, explainable readiness analytics calculated via multi-factor candidate benchmarking.
             </p>
           </div>
           <Link
@@ -36,58 +36,58 @@ export default function PlacementPredictionPage() {
         {/* Hero Score Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center space-y-2">
-            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-gray-500">
-              Estimated Offer Probability
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Estimated Placement Probability
             </span>
-            <div className="text-5xl font-extrabold font-mono text-black">
-              {mlResult.probability}%
-            </div>
-            <div className="text-xs text-gray-500 font-mono">
-              95% CI: [{mlResult.confidenceInterval[0]}%, {mlResult.confidenceInterval[1]}%]
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center space-y-2">
-            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-gray-500">
-              Peer Benchmark Percentile
-            </span>
-            <div className="text-5xl font-extrabold font-mono text-black">
-              {mlResult.peerPercentile}th
-            </div>
-            <div className="text-xs text-gray-500 font-mono">
-              Ahead of {mlResult.peerPercentile}% of engineering peers
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center space-y-2">
-            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-gray-500">
-              Model Calibration Engine
-            </span>
-            <div className="text-xl font-bold text-black font-mono pt-2">
-              XGB-Placify-v2.4
+            <div className="text-5xl font-extrabold tracking-tight text-black">
+              {evaluation.probability}%
             </div>
             <div className="text-xs text-gray-500">
-              Trained on 10,000+ historical campus placements
+              Confidence Range: [{evaluation.confidenceInterval[0]}%, {evaluation.confidenceInterval[1]}%]
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center space-y-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Peer Benchmark Percentile
+            </span>
+            <div className="text-5xl font-extrabold tracking-tight text-black">
+              {evaluation.peerPercentile}th
+            </div>
+            <div className="text-xs text-gray-500">
+              Ahead of {evaluation.peerPercentile}% of candidate benchmarks
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center space-y-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Readiness Index
+            </span>
+            <div className="text-5xl font-extrabold tracking-tight text-black">
+              {evaluation.readinessScore}/100
+            </div>
+            <div className="text-xs text-gray-500">
+              Multi-factor composite preparation score
             </div>
           </div>
         </div>
 
-        {/* SHAP Factor Decomposition (Why is my score X%?) */}
+        {/* Factor Attribution Decomposition (Why is my score X%?) */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <div>
-              <h3 className="text-base font-bold text-black">SHAP (Shapley Additive exPlanations) Attribution</h3>
+              <h3 className="text-base font-bold text-black">Key Placement Factor Drivers</h3>
               <p className="text-xs text-gray-500">
-                Granular factor breakdown revealing exact positive drivers and negative bottlenecks.
+                Granular factor breakdown revealing positive drivers and areas for improvement.
               </p>
             </div>
-            <span className="text-xs font-mono bg-gray-100 px-2.5 py-1 rounded-full text-black font-semibold">
-              Base: 52.0%
+            <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-black font-semibold">
+              Baseline: 52%
             </span>
           </div>
 
           <div className="space-y-4">
-            {mlResult.shapFactors.map((factor, idx) => {
+            {evaluation.shapFactors.map((factor, idx) => {
               const isPos = factor.impactType === 'positive';
               return (
                 <div
@@ -109,7 +109,7 @@ export default function PlacementPredictionPage() {
                     </div>
 
                     <span
-                      className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                      className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
                         isPos
                           ? 'bg-black text-white'
                           : 'bg-gray-200 text-black'
@@ -130,29 +130,29 @@ export default function PlacementPredictionPage() {
 
         {/* Feature Weights Matrix */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
-          <h3 className="text-sm font-bold text-black font-mono uppercase tracking-wider text-gray-500">
-            Feature Weights & Current Profile Values
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Evaluation Factor Weights & Profile Signals
           </h3>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-gray-200 text-gray-400 font-mono">
-                  <th className="py-2.5">Feature Name</th>
-                  <th className="py-2.5">Candidate Value</th>
-                  <th className="py-2.5">Model Importance</th>
-                  <th className="py-2.5 text-right">Status</th>
+                <tr className="border-b border-gray-200 text-gray-400">
+                  <th className="py-2.5 font-semibold">Factor Name</th>
+                  <th className="py-2.5 font-semibold">Candidate Profile Value</th>
+                  <th className="py-2.5 font-semibold">Weight Impact</th>
+                  <th className="py-2.5 text-right font-semibold">Assessment</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {mlResult.featureWeights.map((fw) => (
+                {evaluation.featureWeights.map((fw) => (
                   <tr key={fw.name} className="hover:bg-gray-50 transition-colors">
                     <td className="py-3 font-semibold text-black">{fw.name}</td>
-                    <td className="py-3 font-mono text-gray-700">{fw.value}</td>
-                    <td className="py-3 font-mono text-gray-500">{fw.weight}%</td>
+                    <td className="py-3 text-gray-700 font-medium">{fw.value}</td>
+                    <td className="py-3 text-gray-500 font-medium">{fw.weight}%</td>
                     <td className="py-3 text-right">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                           fw.impact === 'positive'
                             ? 'bg-black text-white'
                             : 'bg-gray-100 text-gray-600'

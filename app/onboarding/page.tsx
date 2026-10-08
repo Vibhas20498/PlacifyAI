@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@/lib/store/user-context';
 import { calculatePlacementProbability } from '@/lib/ml-engine';
+import { ResumeUploadDropzone } from '@/components/resume/ResumeUploadDropzone';
 import {
   Sparkles,
   ArrowRight,
@@ -20,6 +21,8 @@ import {
   TrendingUp,
   ShieldCheck,
   RefreshCw,
+  Zap,
+  FileText,
 } from 'lucide-react';
 
 const COMMON_SKILLS = [
@@ -51,6 +54,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customSkill, setCustomSkill] = useState('');
+  const [autoFilledAlert, setAutoFilledAlert] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: profile.name && profile.name !== 'Candidate' ? profile.name : '',
@@ -69,6 +73,34 @@ export default function OnboardingPage() {
     linkedinUrl: profile.isOnboarded ? (profile.linkedinUrl || '') : '',
     verifiedSkills: profile.isOnboarded && profile.verifiedSkills?.length > 0 ? profile.verifiedSkills : [] as string[],
   });
+
+  // Resume Auto-Fill Extractor Handler
+  const handleResumeParsed = (extracted: any, analysis: any) => {
+    setFormData((prev) => {
+      const mergedSkills = Array.from(new Set([...prev.verifiedSkills, ...(extracted.skills || [])]));
+      return {
+        ...prev,
+        name: prev.name || extracted.name || '',
+        university: extracted.university || prev.university,
+        degree: extracted.degree || prev.degree,
+        cgpa: extracted.cgpa ? String(extracted.cgpa) : prev.cgpa,
+        tier: extracted.tier || prev.tier,
+        graduationYear: extracted.graduationYear || prev.graduationYear,
+        experienceMonths: extracted.experienceMonths || prev.experienceMonths,
+        verifiedSkills: mergedSkills.length > 0 ? mergedSkills : prev.verifiedSkills,
+        projectsCount: extracted.projectsCount ? String(extracted.projectsCount) : prev.projectsCount,
+        hasProductionDeployment: extracted.hasProductionDeployment ?? prev.hasProductionDeployment,
+        githubUrl: extracted.githubUrl || prev.githubUrl,
+        linkedinUrl: extracted.linkedinUrl || prev.linkedinUrl,
+      };
+    });
+
+    if (analysis?.overallScore) {
+      updateProfile({ resumeAtsScore: analysis.overallScore }, false);
+    }
+
+    setAutoFilledAlert(`Auto-extracted ${extracted.skills?.length || 0} verified skills, academic credentials, and links. Review details below.`);
+  };
 
   // Sync profile details when loaded from auth context / Supabase
   React.useEffect(() => {
@@ -171,8 +203,8 @@ export default function OnboardingPage() {
         </Link>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-gray-500 uppercase">Profile Setup Protocol</span>
-          <span className="text-xs font-mono font-bold bg-black text-white px-2.5 py-0.5 rounded-full">
+          <span className="text-xs font-semibold text-gray-500 uppercase">Profile Setup Protocol</span>
+          <span className="text-xs font-bold bg-black text-white px-2.5 py-0.5 rounded-full">
             Step {step} of 4
           </span>
         </div>
@@ -193,7 +225,7 @@ export default function OnboardingPage() {
               ].map((s) => (
                 <div key={s.num} className="flex items-center gap-2">
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-xs font-bold transition-all ${
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                       step === s.num
                         ? 'bg-black text-white ring-4 ring-gray-100'
                         : step > s.num
@@ -222,8 +254,45 @@ export default function OnboardingPage() {
                     Academic & Personal Credentials
                   </h2>
                   <p className="text-xs text-gray-500 mt-1">
-                    Your institutional background is factored into the placement prediction model.
+                    Upload your resume to auto-fill your credentials, or enter them manually.
                   </p>
+                </div>
+
+                {/* 1-Click Fast Track Resume Dropzone */}
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-black text-white flex items-center justify-center">
+                        <Zap className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs font-bold text-black uppercase tracking-wider">
+                        Fast-Track: Auto-Fill Profile from Resume
+                      </span>
+                    </div>
+                    <span className="text-xs bg-white border border-gray-200 px-2.5 py-0.5 rounded-full text-gray-600 font-semibold">
+                      Optional
+                    </span>
+                  </div>
+
+                  <ResumeUploadDropzone
+                    compact
+                    targetRole={formData.targetRole}
+                    userEmail={formData.email}
+                    onParsed={handleResumeParsed}
+                  />
+
+                  {autoFilledAlert && (
+                    <div className="p-3 rounded-xl bg-gray-100 border border-gray-300 text-xs text-black flex items-center gap-2 font-medium">
+                      <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
+                      <span>{autoFilledAlert}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 my-2">
+                  <div className="flex-1 h-px bg-gray-200" />
+                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Or Review & Fill Manually</span>
+                  <div className="flex-1 h-px bg-gray-200" />
                 </div>
 
                 <div className="space-y-4">
@@ -271,7 +340,7 @@ export default function OnboardingPage() {
                         max="2030"
                         value={formData.graduationYear}
                         onChange={(e) => setFormData({ ...formData, graduationYear: parseInt(e.target.value) || 2026 })}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs font-mono focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                       />
                     </div>
                   </div>
@@ -280,7 +349,7 @@ export default function OnboardingPage() {
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-semibold text-gray-700">CGPA (0.0 - 10.0)</label>
-                        <span className="font-mono text-xs font-bold text-black">
+                        <span className="text-xs font-bold text-black">
                           {formData.cgpa ? `${parseFloat(formData.cgpa).toFixed(1)} / 10.0` : 'Required'}
                         </span>
                       </div>
@@ -293,7 +362,7 @@ export default function OnboardingPage() {
                         placeholder="e.g. 8.4"
                         value={formData.cgpa}
                         onChange={(e) => setFormData({ ...formData, cgpa: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs font-mono focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                       />
                     </div>
 
@@ -458,7 +527,7 @@ export default function OnboardingPage() {
                         placeholder="0"
                         value={formData.projectsCount}
                         onChange={(e) => setFormData({ ...formData, projectsCount: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs font-mono focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                       />
                     </div>
 
@@ -472,7 +541,7 @@ export default function OnboardingPage() {
                         />
                         <div>
                           <div className="text-xs font-bold text-black">Live Production Deployment</div>
-                          <div className="text-[10px] text-gray-500">Live public URLs & CI/CD</div>
+                          <div className="text-xs text-gray-500">Live public URLs & CI/CD</div>
                         </div>
                       </label>
                     </div>
@@ -516,7 +585,7 @@ export default function OnboardingPage() {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-semibold text-gray-700">Code Signal / DSA Rating (300 - 850)</label>
-                      <span className="font-mono text-xs font-bold text-black">
+                      <span className="text-xs font-bold text-black">
                         {formData.codeSignalScore ? `${formData.codeSignalScore} / 850` : 'Optional / Baseline'}
                       </span>
                     </div>
@@ -527,9 +596,9 @@ export default function OnboardingPage() {
                       placeholder="e.g. 680"
                       value={formData.codeSignalScore}
                       onChange={(e) => setFormData({ ...formData, codeSignalScore: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs font-mono focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
                     />
-                    <p className="text-[11px] text-gray-400 font-mono">
+                    <p className="text-xs text-gray-500">
                       {formData.codeSignalScore
                         ? `Equivalent: ~${Math.max(0, Math.round((parseInt(formData.codeSignalScore) - 400) / 2.5))} LeetCode medium problems solved.`
                         : 'Enter your CodeSignal rating or contest percentile.'}
@@ -596,59 +665,59 @@ export default function OnboardingPage() {
           {/* Right Column: Live Calibrated AI Score Preview Card */}
           <div className="lg:col-span-4 bg-gray-50 border border-gray-200 rounded-3xl p-6 space-y-6 sticky top-24">
             <div className="space-y-1 pb-3 border-b border-gray-200">
-              <div className="flex items-center gap-1.5 text-xs font-mono font-bold uppercase text-black">
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase text-black">
                 <ShieldCheck className="w-4 h-4 text-black" />
                 <span>Live Calibration Preview</span>
               </div>
-              <p className="text-[11px] text-gray-500">
-                Calculated dynamically via XGBoost model as you input your credentials.
+              <p className="text-xs text-gray-500">
+                Calculated dynamically via multi-factor readiness scoring as you input your credentials.
               </p>
             </div>
 
             <div className="space-y-4">
               <div className="bg-white p-5 rounded-2xl border border-gray-200 text-center space-y-1">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-semibold">
+                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
                   Estimated Placement Probability
                 </span>
-                <div className="text-4xl font-extrabold font-mono text-black">
+                <div className="text-4xl font-extrabold tracking-tight text-black">
                   {liveProb.probability}%
                 </div>
-                <span className="text-[11px] font-mono text-gray-500 block">
+                <span className="text-xs text-gray-500 block">
                   Peer Percentile: {liveProb.peerPercentile}th
                 </span>
               </div>
 
               <div className="bg-white p-5 rounded-2xl border border-gray-200 text-center space-y-1">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-semibold">
+                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
                   Career Readiness Score
                 </span>
-                <div className="text-4xl font-extrabold font-mono text-black">
+                <div className="text-4xl font-extrabold tracking-tight text-black">
                   {liveProb.readinessScore}/100
                 </div>
               </div>
 
               <div className="p-4 rounded-xl bg-white border border-gray-200 space-y-2 text-xs">
                 <div className="font-semibold text-black">Profile Signals Snapshot:</div>
-                <div className="flex justify-between text-gray-600 font-mono text-[11px]">
+                <div className="flex justify-between text-gray-600">
                   <span>CGPA:</span>
                   <span className="text-black font-semibold">{formData.cgpa ? `${parseFloat(formData.cgpa).toFixed(1)} / 10.0` : 'Not set'}</span>
                 </div>
-                <div className="flex justify-between text-gray-600 font-mono text-[11px]">
+                <div className="flex justify-between text-gray-600">
                   <span>Code Signal:</span>
                   <span className="text-black font-semibold">{formData.codeSignalScore ? `${formData.codeSignalScore}/850` : 'Not set'}</span>
                 </div>
-                <div className="flex justify-between text-gray-600 font-mono text-[11px]">
+                <div className="flex justify-between text-gray-600">
                   <span>Verified Skills:</span>
                   <span className="text-black font-semibold">{formData.verifiedSkills.length}</span>
                 </div>
-                <div className="flex justify-between text-gray-600 font-mono text-[11px]">
+                <div className="flex justify-between text-gray-600">
                   <span>Production Live:</span>
                   <span className="text-black font-semibold">{formData.hasProductionDeployment ? 'Yes (+8%)' : 'No'}</span>
                 </div>
               </div>
             </div>
 
-            <div className="text-[10px] font-mono text-gray-400 text-center border-t border-gray-200 pt-3 flex items-center justify-center gap-1.5">
+            <div className="text-xs text-gray-400 text-center border-t border-gray-200 pt-3 flex items-center justify-center gap-1.5">
               <Database className="w-3 h-3" />
               <span>Direct Supabase Persistence</span>
             </div>
@@ -657,7 +726,7 @@ export default function OnboardingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 py-6 px-6 sm:px-12 text-center text-xs text-gray-400 font-mono">
+      <footer className="border-t border-gray-200 py-6 px-6 sm:px-12 text-center text-xs text-gray-500">
         PlacifyAI — Career Intelligence & Placement Precision Analytics.
       </footer>
     </div>

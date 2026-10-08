@@ -43,7 +43,7 @@ export default function SkillGapPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
                     <span
-                      className={`text-[10px] font-mono font-bold uppercase px-2.5 py-1 rounded-full ${
+                      className={`text-xs font-semibold uppercase px-2.5 py-1 rounded-full ${
                         gap.importance === 'Essential'
                           ? 'bg-black text-white'
                           : gap.importance === 'Competitive'
@@ -56,7 +56,7 @@ export default function SkillGapPage() {
                     <h3 className="text-base font-bold text-black">{gap.skill}</h3>
                   </div>
 
-                  <div className="flex items-center gap-4 text-xs font-mono text-gray-500">
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 text-black" />
                       ~{gap.estimatedTimeToAcquireHours} hrs to acquire
@@ -71,10 +71,10 @@ export default function SkillGapPage() {
                 <div className="space-y-2 pt-1">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500">
-                      Current Proficiency: <strong className="text-black font-mono">{gap.currentProficiency}%</strong>
+                      Current Proficiency: <strong className="text-black font-semibold">{gap.currentProficiency}%</strong>
                     </span>
                     <span className="text-gray-500">
-                      Market Target: <strong className="text-black font-mono">{gap.targetProficiency}%</strong>
+                      Market Target: <strong className="text-black font-semibold">{gap.targetProficiency}%</strong>
                     </span>
                   </div>
                   <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden flex">
@@ -90,7 +90,7 @@ export default function SkillGapPage() {
                 </div>
 
                 <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <span className="text-gray-500 font-mono">
+                  <span className="text-gray-500 font-medium">
                     Category: {gap.category} • Deficit Gap: {gapPct}%
                   </span>
                   <div className="flex items-center gap-2">

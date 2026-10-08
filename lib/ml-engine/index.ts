@@ -1,11 +1,11 @@
-import { UserProfile, ShapFactor } from '../types';
+import { UserProfile, ScoreFactor, ShapFactor } from '../types';
 
-export interface MLPredictionResult {
+export interface PlacementEvaluationResult {
   probability: number; // 0 to 100
   confidenceInterval: [number, number]; // [lower, upper]
   peerPercentile: number;
   readinessScore: number;
-  shapFactors: ShapFactor[];
+  shapFactors: ScoreFactor[];
   featureWeights: {
     name: string;
     value: string | number;
@@ -14,10 +14,19 @@ export interface MLPredictionResult {
   }[];
 }
 
+// Alias for backward compatibility
+export type MLPredictionResult = PlacementEvaluationResult;
+
 /**
- * Deterministic XGBoost-calibrated Placement Probability & SHAP Attribution Calculator
+ * Multi-Factor Placement Probability & Factor Attribution Scoring Engine
+ * Evaluates candidate readiness using weighted industry benchmarks across:
+ * - Academic Performance (CGPA & Institutional Tier)
+ * - Resume ATS Quality & Keyword Coverage
+ * - Algorithmic / DSA Problem Solving Benchmark
+ * - Technical Project Depth & Live Production Deployments
+ * - Practical Engineering Experience
  */
-export function calculatePlacementProbability(profile: Partial<UserProfile>): MLPredictionResult {
+export function calculatePlacementProbability(profile: Partial<UserProfile>): PlacementEvaluationResult {
   const cgpa = profile.cgpa ?? 8.2;
   const ats = profile.resumeAtsScore ?? 68;
   const codeSignal = profile.codeSignalScore ?? 620;
@@ -53,11 +62,11 @@ export function calculatePlacementProbability(profile: Partial<UserProfile>): ML
   const tierDelta = tier === 1 ? 0.25 : tier === 2 ? 0.05 : -0.15;
   logit += expDelta + tierDelta;
 
-  // Logistic Sigmoid function
+  // Sigmoid calibration to probability (0-100%)
   const rawProb = 1 / (1 + Math.exp(-logit));
   const probability = Math.min(99, Math.max(5, Math.round(rawProb * 100)));
 
-  // Career Readiness Score (Composite index of preparation)
+  // Career Readiness Score (Composite index of overall preparation)
   const readiness = Math.min(
     100,
     Math.max(
@@ -75,37 +84,37 @@ export function calculatePlacementProbability(profile: Partial<UserProfile>): ML
   // Calculate peer percentile
   const peerPercentile = Math.min(99, Math.max(1, Math.round(readiness * 0.95 + 4)));
 
-  // SHAP feature breakdown
-  const shapFactors: ShapFactor[] = [];
+  // Key factor drivers breakdown
+  const factors: ScoreFactor[] = [];
 
   if (codeSignal >= 700) {
-    shapFactors.push({
+    factors.push({
       feature: 'code_signal',
-      displayName: 'Algorithmic Problem Solving (Code Signal)',
+      displayName: 'Algorithmic Problem Solving Benchmark',
       impactValue: Math.round(codeSignalDelta * 18),
       impactType: 'positive',
-      description: `Rating of ${codeSignal}/850 places you in the top 15% of technical problem solvers.`,
+      description: `Rating of ${codeSignal}/850 places you in the top tier of technical problem solvers.`,
     });
   } else if (codeSignal < 600) {
-    shapFactors.push({
+    factors.push({
       feature: 'code_signal',
       displayName: 'DSA Benchmark Gap',
       impactValue: Math.round(Math.abs(codeSignalDelta) * 14),
       impactType: 'negative',
-      description: `Code Signal rating of ${codeSignal} is below competitive target of 700.`,
+      description: `Rating of ${codeSignal} is below the target benchmark of 700.`,
     });
   }
 
   if (ats >= 80) {
-    shapFactors.push({
+    factors.push({
       feature: 'ats_score',
       displayName: 'ATS Resume Keyword Optimization',
       impactValue: Math.round(atsDelta * 14),
       impactType: 'positive',
-      description: `Resume score of ${ats}/100 exceeds initial corporate ATS filters.`,
+      description: `Resume score of ${ats}/100 meets high-priority corporate keyword criteria.`,
     });
   } else {
-    shapFactors.push({
+    factors.push({
       feature: 'ats_score',
       displayName: 'Resume ATS Alignment Deficit',
       impactValue: Math.round(Math.abs(atsDelta) * 12),
@@ -115,15 +124,15 @@ export function calculatePlacementProbability(profile: Partial<UserProfile>): ML
   }
 
   if (hasProd) {
-    shapFactors.push({
+    factors.push({
       feature: 'production_deployment',
-      displayName: 'Verified Production Project & CI/CD',
+      displayName: 'Verified Production Deployment & CI/CD',
       impactValue: 8,
       impactType: 'positive',
       description: 'Demonstrated cloud deployment signals job-ready engineering maturity.',
     });
   } else {
-    shapFactors.push({
+    factors.push({
       feature: 'production_deployment',
       displayName: 'No Live Production Deployment',
       impactValue: 6,
@@ -133,12 +142,12 @@ export function calculatePlacementProbability(profile: Partial<UserProfile>): ML
   }
 
   if (cgpa >= 8.5) {
-    shapFactors.push({
+    factors.push({
       feature: 'academic_cgpa',
       displayName: 'High Academic Performance (CGPA)',
       impactValue: Math.round(cgpaDelta * 10),
       impactType: 'positive',
-      description: `CGPA of ${cgpa.toFixed(1)} qualifies for all Tier-1 enterprise eligibility criteria.`,
+      description: `CGPA of ${cgpa.toFixed(1)} qualifies for top-tier campus and off-campus eligibility criteria.`,
     });
   }
 
@@ -155,7 +164,7 @@ export function calculatePlacementProbability(profile: Partial<UserProfile>): ML
     confidenceInterval: [Math.max(0, probability - 4), Math.min(100, probability + 4)],
     peerPercentile,
     readinessScore: readiness,
-    shapFactors,
+    shapFactors: factors,
     featureWeights,
   };
 }

@@ -56,35 +56,35 @@ export default function WhatIfSimulatorPage() {
         {/* Live Simulation Result Display */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center space-y-2">
-            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-gray-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
               Current Baseline Probability
             </span>
-            <div className="text-4xl font-extrabold font-mono text-gray-400">
+            <div className="text-4xl font-extrabold tracking-tight text-gray-400">
               {simulation.baseProbability}%
             </div>
-            <div className="text-xs text-gray-400 font-mono">Present Profile</div>
+            <div className="text-xs text-gray-400 font-medium">Present Profile</div>
           </div>
 
           <div className="bg-black text-white rounded-2xl p-6 text-center space-y-2 shadow-lg">
-            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-gray-300">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-300">
               Simulated Projected Probability
             </span>
-            <div className="text-5xl font-extrabold font-mono text-white">
+            <div className="text-5xl font-extrabold tracking-tight text-white">
               {simulation.simulatedProbability}%
             </div>
-            <div className="text-xs text-gray-300 font-mono">
+            <div className="text-xs text-gray-300 font-medium">
               Hypothetical Trajectory
             </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center space-y-2">
-            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-gray-500">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
               Net Probability Gain
             </span>
-            <div className="text-4xl font-extrabold font-mono text-black">
+            <div className="text-4xl font-extrabold tracking-tight text-black">
               {simulation.delta >= 0 ? `+${simulation.delta}%` : `${simulation.delta}%`}
             </div>
-            <div className="text-xs font-mono font-semibold bg-gray-100 inline-block px-2 py-0.5 rounded text-black">
+            <div className="text-xs font-semibold bg-gray-100 inline-block px-2.5 py-1 rounded-full text-black">
               {simulation.delta > 0 ? 'Substantial Boost' : 'Baseline State'}
             </div>
           </div>
@@ -101,7 +101,7 @@ export default function WhatIfSimulatorPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-gray-800">Solve Extra DSA Problems</span>
-                <span className="font-mono font-bold text-black">+{extraLeetcode} Problems</span>
+                <span className="font-bold text-black">+{extraLeetcode} Problems</span>
               </div>
               <input
                 type="range"
@@ -112,7 +112,7 @@ export default function WhatIfSimulatorPage() {
                 onChange={(e) => setExtraLeetcode(parseInt(e.target.value))}
                 className="w-full accent-black cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-gray-400 font-mono">
+              <div className="flex justify-between text-xs text-gray-400 font-medium">
                 <span>0</span>
                 <span>+75</span>
                 <span>+150</span>
@@ -123,7 +123,7 @@ export default function WhatIfSimulatorPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-gray-800">Resume ATS Keyword & Impact Boost</span>
-                <span className="font-mono font-bold text-black">+{atsScoreDelta} pts</span>
+                <span className="font-bold text-black">+{atsScoreDelta} pts</span>
               </div>
               <input
                 type="range"
@@ -134,7 +134,7 @@ export default function WhatIfSimulatorPage() {
                 onChange={(e) => setAtsScoreDelta(parseInt(e.target.value))}
                 className="w-full accent-black cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-gray-400 font-mono">
+              <div className="flex justify-between text-xs text-gray-400 font-medium">
                 <span>0 pts</span>
                 <span>+15 pts</span>
                 <span>+30 pts</span>
@@ -145,7 +145,7 @@ export default function WhatIfSimulatorPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-gray-800">Build Additional Projects</span>
-                <span className="font-mono font-bold text-black">+{extraProjects} Projects</span>
+                <span className="font-bold text-black">+{extraProjects} Projects</span>
               </div>
               <input
                 type="range"
@@ -156,7 +156,7 @@ export default function WhatIfSimulatorPage() {
                 onChange={(e) => setExtraProjects(parseInt(e.target.value))}
                 className="w-full accent-black cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-gray-400 font-mono">
+              <div className="flex justify-between text-xs text-gray-400 font-medium">
                 <span>0</span>
                 <span>+1 Project</span>
                 <span>+3 Projects</span>

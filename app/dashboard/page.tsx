@@ -32,10 +32,10 @@ export default function DashboardPage() {
 
           <div className="flex items-baseline sm:items-end flex-col sm:text-right">
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-extrabold font-mono text-black">
+              <span className="text-4xl font-extrabold tracking-tight text-black">
                 {profile.careerReadinessScore}
               </span>
-              <span className="text-xl font-medium font-mono text-gray-400">/100</span>
+              <span className="text-xl font-medium text-gray-400">/100</span>
             </div>
             <span className="text-xs font-medium text-gray-500 font-sans">
               Overall readiness
@@ -49,7 +49,7 @@ export default function DashboardPage() {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="text-xs font-mono font-bold tracking-wider uppercase text-gray-300">
+                <span className="text-xs font-semibold tracking-wider uppercase text-gray-300">
                   Action Required: Candidate Onboarding
                 </span>
               </div>
@@ -57,7 +57,7 @@ export default function DashboardPage() {
                 Complete Your Candidate Profile Setup
               </h3>
               <p className="text-xs text-gray-300 max-w-xl">
-                Configure your college credentials, verified technical skills, and algorithmic benchmarks to calibrate your personalized XGBoost placement probability.
+                Configure your college credentials, verified technical skills, and algorithmic benchmarks to calibrate your personalized placement readiness probability.
               </p>
             </div>
 
@@ -84,7 +84,7 @@ export default function DashboardPage() {
               value={`${profile.placementProbability}%`}
               iconType="trending"
               href="/placement-prediction"
-              subtitle="XGBoost ML prediction"
+              subtitle="Multi-factor evaluation"
             />
             <StatCard
               label="Resume Score"
@@ -210,10 +210,10 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono font-bold bg-black text-white px-2 py-0.5 rounded">
+                <span className="text-xs font-semibold bg-black text-white px-2.5 py-0.5 rounded-full">
                   +8.4% PROB
                 </span>
-                <span className="text-xs text-gray-500 font-mono">1-2 Days</span>
+                <span className="text-xs text-gray-500 font-medium">1-2 Days</span>
               </div>
               <h4 className="text-sm font-bold text-black">Optimize Resume Bullet Points</h4>
               <p className="text-xs text-gray-600">
@@ -226,10 +226,10 @@ export default function DashboardPage() {
 
             <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono font-bold bg-black text-white px-2 py-0.5 rounded">
+                <span className="text-xs font-semibold bg-black text-white px-2.5 py-0.5 rounded-full">
                   +6.2% PROB
                 </span>
-                <span className="text-xs text-gray-500 font-mono">3 Days</span>
+                <span className="text-xs text-gray-500 font-medium">3 Days</span>
               </div>
               <h4 className="text-sm font-bold text-black">Deploy Dockerized Backend</h4>
               <p className="text-xs text-gray-600">
@@ -242,10 +242,10 @@ export default function DashboardPage() {
 
             <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/50 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono font-bold bg-black text-white px-2 py-0.5 rounded">
+                <span className="text-xs font-semibold bg-black text-white px-2.5 py-0.5 rounded-full">
                   +5.5% PROB
                 </span>
-                <span className="text-xs text-gray-500 font-mono">1 Week</span>
+                <span className="text-xs text-gray-500 font-medium">1 Week</span>
               </div>
               <h4 className="text-sm font-bold text-black">Mock Technical Interview</h4>
               <p className="text-xs text-gray-600">

@@ -176,7 +176,7 @@ export async function sendOtpEmail(email: string, otp: string, userName: string 
                             <tr>
                               <td width="24" valign="top" style="font-family: monospace; font-size: 12px; font-weight: bold; color: #0A0A0A;">01</td>
                               <td style="font-size: 13px; color: #374151; line-height: 1.4;">
-                                <strong>ML Placement Probability:</strong> Calibrated XGBoost & SHAP factor explainability.
+                                <strong>Placement Probability:</strong> Calibrated multi-factor analysis & benchmark scoring.
                               </td>
                             </tr>
                           </table>

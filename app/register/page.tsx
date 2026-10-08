@@ -175,7 +175,7 @@ export default function RegisterPage() {
             </h1>
             <p className="text-xs text-gray-500 leading-relaxed max-w-sm mx-auto">
               {step === 1
-                ? 'Join PlacifyAI to estimate your placement probability with calibrated ML models.'
+                ? 'Join PlacifyAI to estimate your placement probability with calibrated predictive analytics.'
                 : `We sent a single-use 6-digit code to ${email}`}
             </p>
           </div>
@@ -190,12 +190,12 @@ export default function RegisterPage() {
           {/* Dev Mode Code Preview Alert */}
           {devCodePreview && step === 2 && (
             <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-800 space-y-1">
-              <div className="flex items-center gap-1.5 font-bold text-black font-mono">
+              <div className="flex items-center gap-1.5 font-bold text-black">
                 <Info className="w-3.5 h-3.5 text-black" />
                 <span>Development Mode Preview:</span>
               </div>
-              <p className="font-mono text-xs">
-                Your OTP code is <strong className="text-black text-sm tracking-widest bg-white px-2 py-0.5 rounded border border-gray-300">{devCodePreview}</strong>
+              <p className="text-xs text-gray-600">
+                Your OTP code is <strong className="text-black text-sm tracking-widest bg-white px-2 py-0.5 rounded border border-gray-300 font-mono">{devCodePreview}</strong>
               </p>
             </div>
           )}
@@ -326,7 +326,7 @@ export default function RegisterPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 py-6 px-6 sm:px-12 text-center text-xs text-gray-400 font-mono">
+      <footer className="border-t border-gray-200 py-6 px-6 sm:px-12 text-center text-xs text-gray-500">
         PlacifyAI — Secured by Cryptographic Single-Use OTP & Supabase Database.
       </footer>
     </div>

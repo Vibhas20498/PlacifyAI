@@ -23,7 +23,7 @@ export function Topbar() {
           <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">System State:</span>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-black border border-gray-200">
             <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
-            ML Probability Calibrated
+            Placement Probability Calibrated
           </span>
         </div>
       </div>

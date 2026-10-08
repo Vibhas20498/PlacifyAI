@@ -21,6 +21,9 @@ export interface UserProfile {
   placementProbability: number;
   careerReadinessScore: number;
   isOnboarded?: boolean;
+  resumeUrl?: string;
+  resumeFileName?: string;
+  resumeUploadedAt?: string;
 }
 
 export interface StatMetric {
@@ -38,6 +41,9 @@ export interface StatMetric {
 
 export interface ResumeAnalysisResult {
   overallScore: number;
+  fileName?: string;
+  fileSize?: string;
+  parsedAt?: string;
   criteriaScores: {
     impact: number;
     actionVerbs: number;
@@ -47,11 +53,27 @@ export interface ResumeAnalysisResult {
   };
   detectedSkills: string[];
   missingKeywords: string[];
+  extractedProfile?: {
+    name?: string;
+    email?: string;
+    university?: string;
+    degree?: string;
+    cgpa?: number;
+    tier?: 1 | 2 | 3;
+    graduationYear?: number;
+    experienceMonths?: number;
+    githubUrl?: string;
+    linkedinUrl?: string;
+    skills?: string[];
+    projectsCount?: number;
+    hasProductionDeployment?: boolean;
+  };
   criticalImprovements: {
     id: string;
     section: string;
     original: string;
     optimized: string;
+    gain: string;
     rationale: string;
   }[];
 }
@@ -83,13 +105,15 @@ export interface SkillGapItem {
   recommendedRoadmapNodeId: string;
 }
 
-export interface ShapFactor {
+export interface ScoreFactor {
   feature: string;
   displayName: string;
-  impactValue: number; // e.g. +14.2% or -6.4%
+  impactValue: number; // e.g. +14% or -6%
   impactType: 'positive' | 'negative';
   description: string;
 }
+
+export type ShapFactor = ScoreFactor;
 
 export interface RoadmapNode {
   id: string;

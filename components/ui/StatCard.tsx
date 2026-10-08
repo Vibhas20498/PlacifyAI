@@ -43,14 +43,14 @@ export function StatCard({ label, value, iconType, href, subtitle }: StatCardPro
       </div>
 
       <div className="mt-2">
-        <div className="text-3xl font-bold font-mono tracking-tight text-black">
+        <div className="text-3xl font-bold tracking-tight text-black">
           {value}
         </div>
-        <div className="text-sm font-medium text-gray-600 mt-1">
+        <div className="text-sm font-medium text-gray-700 mt-1">
           {label}
         </div>
         {subtitle && (
-          <div className="text-xs text-gray-400 mt-0.5 font-mono">
+          <div className="text-xs text-gray-500 mt-0.5 font-medium">
             {subtitle}
           </div>
         )}
