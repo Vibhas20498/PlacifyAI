@@ -5,34 +5,55 @@ import { AppShell } from '@/components/layout/AppShell';
 import { useUser } from '@/lib/store/user-context';
 import { Building2, MapPin, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { LinkedInRoleRadar } from '@/components/linkedin/LinkedInRoleRadar';
 
 export default function JobsPage() {
   const { jobs, profile } = useUser();
 
   return (
     <AppShell>
-      <div className="space-y-8 max-w-5xl">
+      <div className="space-y-10 max-w-5xl pb-16">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-black">
-              Job Recommendations
+              Job Intelligence & Real-Time Alerts
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Top curated placement opportunities matching your verified skill portfolio.
+              Live LinkedIn radar pings and curated placement opportunities matching your verified skill portfolio.
             </p>
           </div>
           <Link
             href="/job-analyzer"
-            className="px-4 py-2.5 rounded-xl bg-black text-white text-xs font-semibold hover:bg-gray-800 transition-colors inline-flex items-center gap-2"
+            className="px-4 py-2.5 rounded-xl bg-black text-white text-xs font-semibold hover:bg-gray-800 transition-colors inline-flex items-center gap-2 shadow-xs"
           >
             <span>Open Deep Match Matrix</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* Job Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* 1. LINKEDIN LIVE ROLE RADAR */}
+        <section className="space-y-3">
+          <LinkedInRoleRadar />
+        </section>
+
+        {/* 2. CURATED PLACIFY PLACEMENT POOL */}
+        <section className="space-y-4 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-black font-heading">
+                Curated Placement Opportunities
+              </h2>
+              <p className="text-xs text-gray-500">
+                Verified high-probability openings benchmarked against your active candidate dossier
+              </p>
+            </div>
+            <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+              {jobs.length} Matches
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {jobs.map((job) => (
             <div
               key={job.id}
@@ -68,7 +89,8 @@ export default function JobsPage() {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        </section>
       </div>
     </AppShell>
   );
