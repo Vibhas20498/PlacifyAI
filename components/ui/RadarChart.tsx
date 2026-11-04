@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface RadarChartProps {
   data?: { skill: string; score: number }[]; // 0 to 100
@@ -14,7 +15,6 @@ export function RadarChart({
     { skill: 'NumPy', score: 78 },
   ],
 }: RadarChartProps) {
-  // 4-axis diamond/cross polygon matching Image 1 exactly
   const size = 300;
   const center = size / 2;
   const radius = 100;
@@ -42,6 +42,13 @@ export function RadarChart({
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-2">
       <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[280px] h-auto overflow-visible select-none">
+        <defs>
+          <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#0A0A0A" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#6366F1" stopOpacity="0.1" />
+          </linearGradient>
+        </defs>
+
         {/* Background Grid Rings (Diamonds) */}
         {levels.map((lvl, idx) => {
           const pts = [
@@ -66,28 +73,35 @@ export function RadarChart({
         <line x1={center} y1={center - radius} x2={center} y2={center + radius} stroke="#E5E7EB" strokeWidth="1" />
         <line x1={center - radius} y1={center} x2={center + radius} y2={center} stroke="#E5E7EB" strokeWidth="1" />
 
-        {/* Data Shaded Area (Black/Gray Monochrome) */}
-        <polygon
+        {/* Data Shaded Area (Black/Gray Monochrome with gradient) */}
+        <motion.polygon
           points={dataPoints}
-          fill="#0A0A0A"
-          fillOpacity="0.12"
+          fill="url(#radarGradient)"
           stroke="#0A0A0A"
           strokeWidth="2"
+          initial={{ scale: 0.2, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          style={{ transformOrigin: `${center}px ${center}px` }}
         />
 
-        {/* Data Vertex Dots */}
+        {/* Data Vertex Dots with spring animation */}
         {axes.map((axis, idx) => {
           const vx = center + (axis.x - center) * axis.score;
           const vy = center + (axis.y - center) * axis.score;
           return (
-            <circle
+            <motion.circle
               key={`vertex-${idx}`}
               cx={vx}
               cy={vy}
-              r="4"
+              r="4.5"
               fill="#0A0A0A"
               stroke="#FFFFFF"
-              strokeWidth="1.5"
+              strokeWidth="2"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.4 + idx * 0.1, type: 'spring', stiffness: 300, damping: 20 }}
+              whileHover={{ scale: 1.6 }}
             />
           );
         })}
@@ -99,7 +113,7 @@ export function RadarChart({
             x={axis.x + (axis.dx || 0)}
             y={axis.y + (axis.dy || 0)}
             textAnchor={axis.align as any}
-            className="text-[11px] font-sans font-medium fill-gray-600"
+            className="text-[11px] font-sans font-semibold fill-gray-700"
           >
             {axis.name}
           </text>

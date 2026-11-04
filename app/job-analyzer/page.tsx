@@ -147,10 +147,10 @@ export default function JobAnalyzerPage() {
               </div>
             </div>
 
-            {/* RAG Cover Note Tailor */}
+            {/* AI Cover Note Tailor */}
             <div className="pt-4 border-t border-gray-100 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-black">RAG Application Note Generator</span>
+                <span className="text-xs font-bold text-black">AI Application Note Generator</span>
                 <button
                   onClick={handleGenerateCoverNote}
                   disabled={tailoringCover}
