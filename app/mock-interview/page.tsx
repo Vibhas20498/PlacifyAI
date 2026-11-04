@@ -1,183 +1,414 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '@/components/layout/AppShell';
 import { useUser } from '@/lib/store/user-context';
-import { INITIAL_INTERVIEW_SESSION } from '@/lib/mock-data';
-import { InterviewMessage } from '@/lib/types';
-import { Mic, MicOff, Send, Sparkles, CheckCircle2, ShieldCheck, RefreshCw } from 'lucide-react';
+import {
+  InterviewConfig,
+  InterviewSession,
+  InterviewReport,
+  InterviewRoadmapTask,
+  PastInterviewSummary,
+} from '@/lib/interview/types';
+import {
+  startInterviewSession,
+  submitInterviewAnswer,
+  finishInterviewSession,
+  getActiveSessionLocally,
+  clearActiveSessionLocally,
+  fetchPastInterviewHistory,
+} from '@/lib/interview/client-service';
+import { InterviewSetupWizard } from '@/components/interview/InterviewSetupWizard';
+import { InterviewRoom } from '@/components/interview/InterviewRoom';
+import { InterviewReportView } from '@/components/interview/InterviewReportView';
+import { InterviewRoadmapView } from '@/components/interview/InterviewRoadmapView';
+import { InterviewHistoryView } from '@/components/interview/InterviewHistoryView';
+import {
+  Mic,
+  Award,
+  Map,
+  Clock,
+  Sparkles,
+  RotateCcw,
+  Play,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+} from 'lucide-react';
+
+type InterviewViewTab = 'setup' | 'interview' | 'report' | 'roadmap' | 'history';
 
 export default function MockInterviewPage() {
-  const { profile } = useUser();
-  const [sessionMessages, setSessionMessages] = useState<InterviewMessage[]>(INITIAL_INTERVIEW_SESSION);
-  const [userInput, setUserInput] = useState('');
+  const { profile, updateProfile } = useUser();
+
+  const [activeTab, setActiveTab] = useState<InterviewViewTab>('setup');
+  const [currentSession, setCurrentSession] = useState<InterviewSession | null>(null);
+  const [currentReport, setCurrentReport] = useState<InterviewReport | null>(null);
+  const [currentRoadmap, setCurrentRoadmap] = useState<InterviewRoadmapTask[]>([]);
+  const [historyList, setHistoryList] = useState<PastInterviewSummary[]>([]);
+
+  const [isLoading, setIsLoading] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [activeSessionToResume, setActiveSessionToResume] = useState<InterviewSession | null>(null);
 
-  const handleSendAnswer = () => {
-    if (!userInput.trim() || isEvaluating) return;
+  // 1. Initial check for in-progress session and past history
+  useEffect(() => {
+    // Check local storage for an active session to resume
+    const cached = getActiveSessionLocally();
+    if (cached && cached.status === 'active' && cached.currentQuestionIndex < cached.questions.length) {
+      setActiveSessionToResume(cached);
+    }
 
-    const userMsg: InterviewMessage = {
-      id: `usr-${Date.now()}`,
-      sender: 'user',
-      text: userInput,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      rubricEvaluation: {
-        clarityScore: 88,
-        technicalAccuracyScore: 92,
-        starFormulationScore: 85,
-        feedback:
-          'Strong technical articulation. You addressed concurrency handling and cache invalidation clearly with appropriate time/space trade-offs.',
-        groundedCitations: [
-          'Tier-1 Backend Hiring Rubric (Section 03: Concurrency & Caching)',
-          'Amazon STAR Leadership Standard'
-        ]
-      }
-    };
+    // Load past interview history
+    fetchPastInterviewHistory(profile.email).then((list) => {
+      setHistoryList(list);
+    });
+  }, [profile.email]);
 
-    setSessionMessages((prev) => [...prev, userMsg]);
-    setUserInput('');
+  // Handle Starting a New Interview Session
+  const handleStartInterview = async (config: InterviewConfig) => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      // Fetch stored resume text from localStorage if available
+      let resumeText = '';
+      try {
+        const storedAnalysis = localStorage.getItem('placify_last_resume_analysis');
+        if (storedAnalysis) {
+          const parsed = JSON.parse(storedAnalysis);
+          resumeText = parsed.rawText || '';
+        }
+      } catch {}
+
+      const session = await startInterviewSession(config, profile, resumeText);
+      setCurrentSession(session);
+      setActiveSessionToResume(null);
+      setActiveTab('interview');
+    } catch (err: any) {
+      console.error('[Start Interview Error]:', err);
+      setErrorMessage(err.message || 'Failed to initialize mock interview. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Resume In-Progress Interview
+  const handleResumeSession = () => {
+    if (activeSessionToResume) {
+      setCurrentSession(activeSessionToResume);
+      setActiveSessionToResume(null);
+      setActiveTab('interview');
+    }
+  };
+
+  // Dismiss In-Progress Session
+  const handleDiscardSession = () => {
+    clearActiveSessionLocally();
+    setActiveSessionToResume(null);
+  };
+
+  // Handle Submitting Answer
+  const handleSubmitAnswer = async (answer: string) => {
+    if (!currentSession) return { isComplete: false };
     setIsEvaluating(true);
 
-    setTimeout(() => {
-      const aiFollowUp: InterviewMessage = {
-        id: `ai-${Date.now()}`,
-        sender: 'ai',
-        text: 'Well articulated. Let us move to a live system design scenario: If you had to design a distributed rate limiter handling 50,000 requests per second across 4 microservices, what algorithm and data store would you select?',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setSessionMessages((prev) => [...prev, aiFollowUp]);
+    try {
+      const { updatedSession, evaluation, isComplete } = await submitInterviewAnswer(
+        currentSession,
+        answer
+      );
+      setCurrentSession(updatedSession);
+
+      if (isComplete) {
+        // Automatically finish session and generate report
+        await handleFinishSession(updatedSession);
+      }
+
+      return { evaluation, isComplete };
+    } catch (err: any) {
+      console.error('[Submit Answer Error]:', err);
+      setErrorMessage('Failed to evaluate answer. Please try again.');
+      return { isComplete: false };
+    } finally {
       setIsEvaluating(false);
-    }, 1000);
+    }
+  };
+
+  // Finish Interview & Compile Report + Roadmap
+  const handleFinishSession = async (sessionToFinish?: InterviewSession) => {
+    const s = sessionToFinish || currentSession;
+    if (!s) return;
+    setIsLoading(true);
+
+    try {
+      const { completedSession, report, roadmap } = await finishInterviewSession(s);
+      setCurrentSession(completedSession);
+      setCurrentReport(report);
+      setCurrentRoadmap(roadmap);
+
+      // Update user placement readiness and history
+      if (report.overallScore > 0) {
+        const scoreBonus = Math.min(10, Math.round(report.overallScore / 10));
+        updateProfile(
+          {
+            careerReadinessScore: Math.min(98, (profile.careerReadinessScore || 70) + scoreBonus),
+          },
+          true
+        );
+      }
+
+      // Refresh history list
+      fetchPastInterviewHistory(profile.email).then((list) => setHistoryList(list));
+
+      setActiveTab('report');
+    } catch (err: any) {
+      console.error('[Finish Interview Error]:', err);
+      setErrorMessage('Failed to generate final report. Session saved locally.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Save and Return to Setup
+  const handleSaveAndExit = () => {
+    setActiveTab('setup');
   };
 
   return (
     <AppShell>
-      <div className="space-y-6 max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
+      <div className="space-y-8">
+        {/* Header Strip with Title & Navigation Tabs */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-4 border-b border-gray-200/80">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-black">
-              Mock Interview Practice Simulator
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              RAG-grounded live interview assessment with rubric scoring and STAR feedback.
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-3xl font-extrabold tracking-tight text-black font-heading">
+                AI Placement Mock Interview
+              </h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Resume Grounded
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 mt-1 font-sans">
+              Personalized technical, behavioral, and coding simulations with multi-dimensional rubric scoring.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-semibold bg-gray-100 px-3 py-1.5 rounded-full text-black border border-gray-200">
-              Role: {profile.targetRole}
-            </span>
-          </div>
-        </div>
-
-        {/* Interview Session Feed */}
-        <div className="space-y-6">
-          {sessionMessages.map((msg) => {
-            const isAi = msg.sender === 'ai';
-            return (
-              <div key={msg.id} className="space-y-3">
-                <div className={`flex gap-3 ${isAi ? 'justify-start' : 'justify-end'}`}>
-                  {isAi && (
-                    <div className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center shrink-0 font-bold text-xs">
-                      AI
-                    </div>
-                  )}
-
-                  <div
-                    className={`max-w-[85%] p-5 rounded-2xl text-xs leading-relaxed space-y-2 ${
-                      isAi
-                        ? 'bg-white border border-gray-200 text-gray-800'
-                        : 'bg-black text-white'
-                    }`}
-                  >
-                    <p className="whitespace-pre-line">{msg.text}</p>
-                    <div className="text-[10px] font-mono text-gray-400 text-right">
-                      {msg.timestamp}
-                    </div>
-                  </div>
-
-                  {!isAi && (
-                    <div className="w-8 h-8 rounded-xl bg-gray-100 border border-gray-200 text-black flex items-center justify-center shrink-0 font-bold text-xs">
-                      {profile.name.charAt(0)}
-                    </div>
-                  )}
-                </div>
-
-                {/* Rubric Evaluation Card for User Response */}
-                {msg.rubricEvaluation && (
-                  <div className="ml-11 max-w-[85%] bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-black flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-black" />
-                        AI Rubric Evaluation
-                      </span>
-                      <div className="flex items-center gap-2 font-mono text-xs">
-                        <span className="bg-white border border-gray-200 px-2 py-0.5 rounded text-black font-semibold">
-                          Clarity: {msg.rubricEvaluation.clarityScore}%
-                        </span>
-                        <span className="bg-white border border-gray-200 px-2 py-0.5 rounded text-black font-semibold">
-                          Accuracy: {msg.rubricEvaluation.technicalAccuracyScore}%
-                        </span>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-gray-700 leading-relaxed">
-                      {msg.rubricEvaluation.feedback}
-                    </p>
-
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {msg.rubricEvaluation.groundedCitations.map((citation, idx) => (
-                        <span
-                          key={idx}
-                          className="text-[10px] font-mono bg-white border border-gray-200 px-2 py-0.5 rounded text-gray-600"
-                        >
-                          {citation}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Input Bar */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-3 sticky bottom-4 shadow-sm">
-          <textarea
-            rows={3}
-            placeholder="Type your structured STAR response or speak your answer..."
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            className="w-full text-xs outline-none resize-none placeholder-gray-400"
-          />
-
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          {/* Tab Navigation Pill Bar */}
+          <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-2xl border border-gray-200/80 self-start md:self-auto overflow-x-auto max-w-full">
             <button
               type="button"
-              onClick={() => setIsRecording(!isRecording)}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                isRecording
-                  ? 'bg-red-50 border-red-300 text-red-700 animate-pulse'
-                  : 'border-gray-200 text-gray-700 hover:text-black hover:bg-gray-50'
+              onClick={() => setActiveTab('setup')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'setup'
+                  ? 'bg-white text-black shadow-xs'
+                  : 'text-gray-600 hover:text-black'
               }`}
             >
-              {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-              <span>{isRecording ? 'Listening...' : 'Voice Dictate'}</span>
+              <Play className="w-3.5 h-3.5" />
+              <span>Interview Setup</span>
             </button>
 
+            {currentSession && currentSession.status === 'active' && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('interview')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  activeTab === 'interview'
+                    ? 'bg-black text-white shadow-xs'
+                    : 'text-gray-600 hover:text-black'
+                }`}
+              >
+                <Mic className="w-3.5 h-3.5" />
+                <span>Live Interview</span>
+              </button>
+            )}
+
+            {currentReport && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('report')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  activeTab === 'report'
+                    ? 'bg-white text-black shadow-xs'
+                    : 'text-gray-600 hover:text-black'
+                }`}
+              >
+                <Award className="w-3.5 h-3.5" />
+                <span>Evaluation Report</span>
+              </button>
+            )}
+
+            {currentRoadmap.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('roadmap')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  activeTab === 'roadmap'
+                    ? 'bg-white text-black shadow-xs'
+                    : 'text-gray-600 hover:text-black'
+                }`}
+              >
+                <Map className="w-3.5 h-3.5" />
+                <span>Practice Roadmap</span>
+              </button>
+            )}
+
             <button
-              onClick={handleSendAnswer}
-              disabled={!userInput.trim() || isEvaluating}
-              className="px-5 py-2 rounded-xl bg-black text-white text-xs font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+              type="button"
+              onClick={() => setActiveTab('history')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'history'
+                  ? 'bg-white text-black shadow-xs'
+                  : 'text-gray-600 hover:text-black'
+              }`}
             >
-              {isEvaluating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              <span>{isEvaluating ? 'Evaluating...' : 'Submit Answer'}</span>
+              <Clock className="w-3.5 h-3.5" />
+              <span>History ({historyList.length})</span>
             </button>
           </div>
         </div>
+
+        {/* Global Error Banner */}
+        {errorMessage && (
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setErrorMessage('')}
+              className="text-xs font-bold text-rose-900 hover:underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* In-Progress Session Recovery Banner */}
+        {activeSessionToResume && activeTab === 'setup' && (
+          <div className="p-5 rounded-3xl bg-slate-950 text-white border border-slate-800 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 card-hover-lift">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center font-bold text-base">
+                <Mic className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white font-heading">
+                  Resume In-Progress Interview Session
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  You have an unfinished {activeSessionToResume.config.targetRole} interview ({activeSessionToResume.currentQuestionIndex + 1} of {activeSessionToResume.questions.length} questions).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={handleDiscardSession}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+              >
+                Discard
+              </button>
+              <button
+                type="button"
+                onClick={handleResumeSession}
+                className="px-4 py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-gray-100 transition-all shadow-xs"
+              >
+                Resume Session &rarr;
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Active Tab View Rendering */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'setup' && (
+            <motion.div
+              key="setup"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <InterviewSetupWizard
+                profile={profile}
+                onStartInterview={handleStartInterview}
+                isLoading={isLoading}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'interview' && currentSession && (
+            <motion.div
+              key="interview"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <InterviewRoom
+                session={currentSession}
+                onSubmitAnswer={handleSubmitAnswer}
+                onFinishEarly={() => handleFinishSession()}
+                onSaveAndExit={handleSaveAndExit}
+                isEvaluating={isEvaluating}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'report' && currentReport && currentSession && (
+            <motion.div
+              key="report"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <InterviewReportView
+                session={currentSession}
+                report={currentReport}
+                onViewRoadmap={() => setActiveTab('roadmap')}
+                onRetakeInterview={() => setActiveTab('setup')}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'roadmap' && currentSession && (
+            <motion.div
+              key="roadmap"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <InterviewRoadmapView
+                tasks={currentRoadmap}
+                targetRole={currentSession.config.targetRole}
+                onRetakeInterview={() => setActiveTab('setup')}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'history' && (
+            <motion.div
+              key="history"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <InterviewHistoryView
+                history={historyList}
+                onStartNew={() => setActiveTab('setup')}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </AppShell>
   );
