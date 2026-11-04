@@ -14,7 +14,7 @@ export const KNOWLEDGE_CORPUS: RAGKnowledgeDoc[] = [
     title: 'ATS Resume Scoring & Impact Quantification Matrix',
     source: 'Enterprise Talent Acquisition Benchmarks',
     category: 'ATS Guide',
-    snippet: 'Resumes utilizing the Google XYZ formula ("Accomplished [X] as measured by [Y], by doing [Z]") achieve a 3.4x higher interview callback rate. Bullet points lacking numbers (percentages, latency ms, QPS, user count) score below 60/100 in automated ATS parsers.',
+    snippet: 'Resumes utilizing the Action-Impact formula ("Accomplished [X] as measured by [Y], by doing [Z]") achieve a 3.4x higher interview callback rate. Bullet points lacking numbers (percentages, latency ms, QPS, user count) score below 60/100 in automated ATS parsers.',
     relevanceScore: 0.92,
   },
   {

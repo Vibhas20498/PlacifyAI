@@ -11,6 +11,7 @@ import {
   RetrievedChunkResult,
   StructuredRAGAnalysis,
 } from './types';
+import { rewriteBulletWithAI } from '../ai/bullet-rewriter';
 
 interface GenerateRAGAnalysisParams {
   rawText: string;
@@ -130,9 +131,10 @@ export async function generateRAGResumeAnalysis({
         'Worked on database queries and API endpoints for user authentication.',
       ];
 
-  rawBullets.slice(0, 5).forEach((bullet) => {
+  const bulletsToProcess = rawBullets.slice(0, 5).filter((b) => b.trim().length >= 10);
+
+  for (const bullet of bulletsToProcess) {
     const trimmed = bullet.trim();
-    if (trimmed.length < 10) return;
 
     // Retrieve specific vector context for this bullet
     const bulletRAGMatches = globalResumeVectorStore.search(
@@ -153,65 +155,31 @@ export async function generateRAGResumeAnalysis({
     const hasMetric = /\b(?:\d+%(?:\.\d+)?|\$\d+|\d+\s*(?:ms|seconds|minutes|users|records|requests|qps|endpoints))\b/i.test(trimmed);
     const hasWeakVerb = WEAK_PHRASES.some((w) => lower.startsWith(w.toLowerCase()) || lower.includes(` ${w.toLowerCase()} `));
 
-    // Detect if bullet already has a strong verb
-    const firstWordMatch = trimmed.match(/^([A-Za-z]+)\b/);
-    const leadingWord = firstWordMatch ? firstWordMatch[1] : '';
-    const isAlreadyStrongVerb = STRONG_ACTION_VERBS.some((v) => v.toLowerCase() === leadingWord.toLowerCase()) || /^(?:trained|spearheaded|evaluated|analyzed|formulated|orchestrated|constructed)$/i.test(leadingWord);
-
-    // Extract core subject/technologies from bullet
-    const cleanedSubject = trimmed
-      .replace(/^(?:i\s+|we\s+)?(?:worked\s+on|responsible\s+for|helped\s+with|assisted\s+in|tasked\s+with|participated\s+in|did|made|built|created|developed|implemented|trained|designed|architected|engineered|automated|optimized|formulated)\s+(?:a\b|an\b|the\b)?\s*/i, '')
-      .trim();
-
-    const baseSubject = cleanedSubject.length > 5 ? cleanedSubject : trimmed;
-
-    // Pick domain-appropriate action verb (or preserve existing strong verb)
-    let actionVerb = isAlreadyStrongVerb ? leadingWord.charAt(0).toUpperCase() + leadingWord.slice(1) : 'Architected';
-    if (!isAlreadyStrongVerb) {
-      if (lower.includes('data') || lower.includes('model') || lower.includes('analytics') || lower.includes('sql') || lower.includes('python')) {
-        actionVerb = targetRoleNormalized.includes('Data') ? 'Formulated' : 'Engineered';
-      } else if (lower.includes('deploy') || lower.includes('docker') || lower.includes('cloud') || lower.includes('pipeline')) {
-        actionVerb = 'Automated';
-      } else if (lower.includes('query') || lower.includes('optimiz') || lower.includes('speed') || lower.includes('perform')) {
-        actionVerb = 'Optimized';
-      } else if (lower.includes('ui') || lower.includes('frontend') || lower.includes('react') || lower.includes('css')) {
-        actionVerb = 'Engineered';
-      }
-    }
-
-    // Format subject casing
-    let formattedSubject = baseSubject.replace(/[.;,]+$/, '');
-    const firstWordOfSubject = formattedSubject.split(/\s+/)[0] || '';
-    const isAcronym = /^[A-Z]{2,}/.test(firstWordOfSubject);
-    if (!isAcronym && formattedSubject.length > 0 && !isAlreadyStrongVerb) {
-      formattedSubject = formattedSubject.charAt(0).toLowerCase() + formattedSubject.slice(1);
-    }
+    // Call AI bullet rewriter (Gemini API or intelligent zero-placeholder synthesizer)
+    const aiResult = await rewriteBulletWithAI(trimmed, {
+      targetRole: targetRoleNormalized,
+    });
 
     let issue = '';
     let reason = '';
     let recommendation = '';
-    let suggestedVersion = '';
 
     if (hasWeakVerb && !hasMetric) {
       issue = 'Weak Opening Verb & Missing Quantifiable Impact';
       reason = 'The bullet opens with a passive phrase and describes tasks without communicating the measurable engineering outcome or scale.';
-      recommendation = `Upgrade the opening to an impactful action verb ("${actionVerb}") and state the technical outcome. Add measurable metrics (e.g. latency, users, data volume) if you recorded them.`;
-      suggestedVersion = `${actionVerb} ${formattedSubject} [Specify measured impact if available, e.g. reducing response latency by 35% or supporting 1,500+ active users].`;
-    } else if (hasWeakVerb && hasMetric) {
+      recommendation = `Upgrade opening to impact verb "${aiResult.actionVerb}" and integrate quantifiable technical metrics.`;
+    } else if (hasWeakVerb) {
       issue = 'Passive Action Verb';
-      reason = 'While quantifiable results are present, the opening verb is passive and diminishes your personal contribution.';
-      recommendation = `Replace the passive opener with "${actionVerb}" to claim clear technical ownership.`;
-      suggestedVersion = `${actionVerb} ${formattedSubject}.`;
+      reason = 'While technical context is present, the opening verb is passive and diminishes your personal contribution.';
+      recommendation = `Replace passive opener with "${aiResult.actionVerb}" to claim clear technical ownership.`;
     } else if (!hasMetric) {
       issue = 'Lacks Quantifiable Scale or Performance Benchmark';
       reason = 'The bullet explains what was built, but provides no data points (speed, volume, uptime, users) for technical screeners to evaluate project scale.';
-      recommendation = 'Add real metrics from your project testing (e.g. query execution time, dataset sample size, test coverage %, or active users). Do not invent numbers.';
-      suggestedVersion = `${actionVerb} ${formattedSubject} [Add measured outcome, e.g. achieving 99.9% uptime or processing 50,000+ records].`;
+      recommendation = `Quantify engineering impact (${aiResult.metricAdded}) to prove tangible project value.`;
     } else {
-      issue = 'Good Foundation — Can Refine Technical Precision';
-      reason = 'The bullet contains good technical context and numbers, but can be framed more assertively using the Google XYZ format.';
-      recommendation = 'Ensure the technology stack and architecture decisions are front-loaded.';
-      suggestedVersion = `${actionVerb} ${formattedSubject}.`;
+      issue = 'Good Foundation — Refined Technical Precision';
+      reason = 'The bullet contains good technical context, but is framed more assertively using the Action-Impact format.';
+      recommendation = 'Technology stack and architecture decisions are front-loaded.';
     }
 
     bulletPointReasoning.push({
@@ -219,14 +187,14 @@ export async function generateRAGResumeAnalysis({
       issue,
       reason,
       recommendation,
-      suggestedVersion,
+      suggestedVersion: aiResult.correctedBullet,
       isQuantificationMissing: !hasMetric,
       ragCitations: bulletRAGMatches.map((m) => ({
         title: m.chunk.title,
         category: m.chunk.category,
       })),
     });
-  });
+  }
 
   // 4. Job Description Match Analysis (if JD provided or using target role)
   let jobMatchAnalysis: StructuredRAGAnalysis['jobMatchAnalysis'] | undefined;

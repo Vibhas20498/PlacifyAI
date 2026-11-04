@@ -2,12 +2,12 @@ import { RAGKnowledgeChunk } from '../types';
 
 export const WRITING_KNOWLEDGE_CHUNKS: RAGKnowledgeChunk[] = [
   {
-    id: 'writing-google-xyz-formula',
+    id: 'writing-action-impact-formula',
     category: 'Resume Writing',
     roleTarget: 'General',
-    title: 'Google XYZ Bullet Structure Formula',
+    title: 'Action-Impact Bullet Structure Formula',
     topic: 'Bullet Point Architecture',
-    content: `The gold standard for technical resume bullet points is Google's XYZ Formula: "Accomplished [X], as measured by [Y], by doing [Z]".
+    content: `The industry gold standard for technical resume bullet points is the Action-Impact Formula: "Accomplished [X], as measured by [Y], by doing [Z]".
 - [X]: The specific technical outcome or business milestone achieved.
 - [Y]: The quantifiable metric, baseline comparison, or scale (e.g., latency ms, throughput QPS, accuracy %, active users).
 - [Z]: The specific technologies, algorithms, architectural patterns, or methodologies employed.
@@ -15,7 +15,7 @@ Every bullet should open with a strong past-tense action verb and avoid passive 
     sampleWeakBullet: 'Worked on building a web application using React and Node.js.',
     sampleStrongBullet: 'Architected a responsive fullstack analytics dashboard using React, Node.js, and PostgreSQL, cutting API query latency by 45% for 12,000+ active users.',
     quantificationAdvice: 'Identify measurable outcomes such as response time reduction (ms), query throughput (QPS), test coverage (%), or user scale.',
-    tags: ['xyz-formula', 'bullet-structure', 'action-verbs', 'metrics', 'star', 'car'],
+    tags: ['impact-formula', 'bullet-structure', 'action-verbs', 'metrics', 'star', 'car'],
   },
   {
     id: 'writing-action-verbs-taxonomy',
