@@ -25,6 +25,15 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
 body {
   background-color: var(--white);
   color: var(--black);
@@ -51,12 +60,17 @@ body {
   background: var(--gray-40);
 }
 
-/* Tabular mono stats */
+/* Tabular stats - clean aligned numbers using Inter */
 .tabular-stat {
-  font-family: var(--font-mono);
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif !important;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+}
+
+/* Ensure any font-mono utility class renders the same unified Inter font */
+.font-mono {
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif !important;
 }
 
 /* Pattern fills for monochrome data differentiation */
