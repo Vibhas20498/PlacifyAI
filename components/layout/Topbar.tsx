@@ -256,11 +256,11 @@ export function Topbar({ onToggleMobileMenu }: TopbarProps) {
                     onClick={() => {
                       setShowUserMenu(false);
                       clearSession();
-                      window.location.href = '/';
+                      window.location.href = '/login';
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors text-left"
                   >
-                    Sign Out / Switch Account
+                    Log Out / Switch Account
                   </button>
                 </div>
               </motion.div>

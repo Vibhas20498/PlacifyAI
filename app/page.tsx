@@ -701,10 +701,10 @@ export default function LandingPage() {
         </p>
         <div className="pt-2">
           <Link
-            href="/dashboard"
+            href={isLoggedIn ? "/dashboard" : "/login"}
             className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl bg-black text-white font-semibold text-sm hover:bg-gray-800 transition-all shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span>Launch Command Center</span>
+            <span>{isLoggedIn ? "Launch Command Center" : "Log In to Access Dashboard"}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -718,9 +718,9 @@ export default function LandingPage() {
           <span>&copy; 2026. Precision Career Intelligence.</span>
         </div>
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="hover:text-black font-medium transition-colors">Dashboard</Link>
-          <Link href="/resume" className="hover:text-black font-medium transition-colors">Resume Analyzer</Link>
-          <Link href="/profile" className="hover:text-black font-medium transition-colors">Profile</Link>
+          <Link href={isLoggedIn ? "/dashboard" : "/login"} className="hover:text-black font-medium transition-colors">Dashboard</Link>
+          <Link href={isLoggedIn ? "/resume" : "/login"} className="hover:text-black font-medium transition-colors">Resume Analyzer</Link>
+          <Link href={isLoggedIn ? "/profile" : "/login"} className="hover:text-black font-medium transition-colors">Profile</Link>
           <a href="/PLACIFYAI_PROJECT_SPECIFICATION.md" download className="hover:text-black font-medium transition-colors">Spec Dossier</a>
         </div>
       </footer>

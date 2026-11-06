@@ -12,6 +12,7 @@ interface UserContextType {
   roadmap: RoadmapNode[];
   shapFactors: ShapFactor[];
   isOnline: boolean;
+  isHydrated: boolean;
   isLoadingProfile: boolean;
   isSavingProfile: boolean;
   unreadNotificationsCount: number;
@@ -34,6 +35,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [jobs, setJobs] = useState<JobListing[]>(INITIAL_JOBS);
   const [roadmap, setRoadmap] = useState<RoadmapNode[]>(INITIAL_ROADMAP);
   const [isOnline] = useState<boolean>(true);
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState<boolean>(false);
   const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState<number>(3);
@@ -100,7 +102,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             .finally(() => setIsLoadingProfile(false));
         }
       }
-    } catch {}
+    } catch {} finally {
+      setIsHydrated(true);
+    }
   }, []);
 
   // 2. Recalculate ML predictions whenever profile parameters change
@@ -215,6 +219,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         roadmap,
         shapFactors,
         isOnline,
+        isHydrated,
         isLoadingProfile,
         isSavingProfile,
         unreadNotificationsCount,

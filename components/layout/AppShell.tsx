@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { useUser } from '@/lib/store/user-context';
+import { RefreshCw } from 'lucide-react';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -11,6 +14,31 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { profile, isHydrated } = useUser();
+  const router = useRouter();
+
+  const isAuthenticated = Boolean(profile?.email && profile.email.trim().length > 0);
+
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isHydrated, isAuthenticated, router]);
+
+  // If still checking saved session from localStorage or unauthenticated, show clean auth gate
+  if (!isHydrated || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center shadow-md animate-pulse">
+          <RefreshCw className="w-5 h-5 animate-spin" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-black">Verifying candidate credentials...</p>
+          <p className="text-xs text-gray-500">Redirecting to login if no active session is found.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-black flex">
