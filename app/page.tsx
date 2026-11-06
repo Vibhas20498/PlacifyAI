@@ -32,8 +32,11 @@ import {
 } from '@/components/ui/FloatingElements';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { AnimatedTabs, TabItem } from '@/components/ui/AnimatedTabs';
+import { useUser } from '@/lib/store/user-context';
 
 export default function LandingPage() {
+  const { profile } = useUser();
+  const isLoggedIn = Boolean(profile?.email && profile.email.trim().length > 0);
   const [scrolled, setScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [activePreviewTab, setActivePreviewTab] = useState<'prediction' | 'resume' | 'skillgap' | 'whatif'>('prediction');
@@ -142,18 +145,30 @@ export default function LandingPage() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="text-xs font-semibold text-gray-700 hover:text-black px-3 py-2 rounded-xl hover:bg-gray-100/60 transition-colors"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/register"
-            className="px-4 py-2 rounded-xl bg-black text-white text-xs font-semibold hover:bg-gray-800 transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
-          >
-            Explore Dashboard
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className="px-4 py-2 rounded-xl bg-black text-white text-xs font-semibold hover:bg-gray-800 transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] flex items-center gap-1.5"
+            >
+              <span>Go to Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-xs font-semibold text-gray-700 hover:text-black px-3.5 py-2 rounded-xl hover:bg-gray-100/60 transition-colors"
+              >
+                Log In
+              </Link>
+              <Link
+                href="/register"
+                className="px-4 py-2 rounded-xl bg-black text-white text-xs font-semibold hover:bg-gray-800 transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Create Account
+              </Link>
+            </>
+          )}
 
           {/* Mobile hamburger */}
           <button
@@ -192,20 +207,33 @@ export default function LandingPage() {
               >
                 Platform Capabilities
               </a>
-              <Link
-                href="/login"
-                onClick={() => setMobileNavOpen(false)}
-                className="p-2 hover:bg-gray-50 rounded-xl"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setMobileNavOpen(false)}
-                className="p-3 text-center rounded-xl bg-black text-white"
-              >
-                Get Started Free
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="p-3 text-center rounded-xl bg-black text-white flex items-center justify-center gap-2"
+                >
+                  <span>Go to Dashboard</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="p-2 hover:bg-gray-50 rounded-xl"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="p-3 text-center rounded-xl bg-black text-white"
+                  >
+                    Create Account
+                  </Link>
+                </>
+              )}
             </nav>
           </motion.div>
         )}
@@ -258,10 +286,10 @@ export default function LandingPage() {
             {/* Primary & Secondary CTAs */}
             <motion.div variants={itemVariants} className="pt-2 flex flex-wrap items-center gap-3.5">
               <Link
-                href="/register"
+                href={isLoggedIn ? "/dashboard" : "/register"}
                 className="px-7 py-4 rounded-xl bg-black text-white text-sm font-semibold hover:bg-gray-800 transition-all flex items-center gap-2.5 group shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
               >
-                <span>Explore Your Career Readiness</span>
+                <span>{isLoggedIn ? "Open Your Placement Dashboard" : "Explore Your Career Readiness"}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <a

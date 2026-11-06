@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sparkles, ArrowRight, ShieldCheck, Mail, RefreshCw, CheckCircle2, ArrowLeft, Info } from 'lucide-react';
+import { Sparkles, ArrowRight, ShieldCheck, Mail, RefreshCw, CheckCircle2, ArrowLeft, Info, UserCheck } from 'lucide-react';
 import { OtpInput } from '@/components/auth/OtpInput';
 import { useUser } from '@/lib/store/user-context';
+import { INITIAL_USER_PROFILE } from '@/lib/mock-data';
+import { UserProfile } from '@/lib/types';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { updateProfile, setSessionProfile } = useUser();
+  const { setSessionProfile } = useUser();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
@@ -22,6 +24,10 @@ export default function LoginPage() {
   const [resendTimer, setResendTimer] = useState(0);
 
   useEffect(() => {
+    document.title = 'Log In | PlacifyAI';
+  }, []);
+
+  useEffect(() => {
     let interval: any;
     if (resendTimer > 0) {
       interval = setInterval(() => {
@@ -30,6 +36,15 @@ export default function LoginPage() {
     }
     return () => clearInterval(interval);
   }, [resendTimer]);
+
+  const handleDemoLogin = () => {
+    const demoProfile: UserProfile = {
+      ...INITIAL_USER_PROFILE,
+      isOnboarded: true,
+    };
+    setSessionProfile(demoProfile);
+    router.push('/dashboard');
+  };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -46,7 +61,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, purpose: 'login' }),
       });
 
       const data = await res.json();
@@ -150,9 +165,9 @@ export default function LoginPage() {
         </Link>
 
         <div className="text-xs text-gray-500 font-medium">
-          New candidate?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/register" className="font-bold text-black hover:underline">
-            Create account
+            Register / Create Account
           </Link>
         </div>
       </header>
@@ -163,14 +178,14 @@ export default function LoginPage() {
           <div className="space-y-2 text-center">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-200 bg-gray-50 text-xs font-medium text-gray-700 mb-2">
               <ShieldCheck className="w-3.5 h-3.5 text-black" />
-              <span>Passwordless Sign In</span>
+              <span>Candidate Log In</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-black">
-              {step === 1 ? 'Sign In to PlacifyAI' : 'Enter Verification Code'}
+              {step === 1 ? 'Log In to PlacifyAI' : 'Enter Verification Code'}
             </h1>
             <p className="text-xs text-gray-500 leading-relaxed max-w-sm mx-auto">
               {step === 1
-                ? 'Enter your registered email address to receive a secure 6-digit access code.'
+                ? 'Enter your registered email address to receive a secure 6-digit login code and open your placement dashboard.'
                 : `We sent a single-use 6-digit login code to ${email}`}
             </p>
           </div>
@@ -197,37 +212,58 @@ export default function LoginPage() {
 
           {/* STEP 1: Enter Email */}
           {step === 1 && (
-            <form onSubmit={handleSendOtp} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-gray-400" />
-                  <span>Email Address</span>
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="candidate@university.edu"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
-                />
+            <div className="space-y-4">
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-gray-400" />
+                    <span>Email Address</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="candidate@university.edu"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3.5 rounded-xl bg-black text-white text-xs font-semibold hover:bg-gray-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+                >
+                  {isLoading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Send Log In Code</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Demo Mode / 1-Click Access */}
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-white px-2.5 text-gray-400 font-medium">or test platform</span>
+                </div>
               </div>
 
               <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3.5 rounded-xl bg-black text-white text-xs font-semibold hover:bg-gray-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+                type="button"
+                onClick={handleDemoLogin}
+                className="w-full py-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-800 transition-all flex items-center justify-center gap-2 group hover:border-gray-400"
               >
-                {isLoading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <span>Send Login Code</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
+                <UserCheck className="w-3.5 h-3.5 text-black group-hover:scale-110 transition-transform" />
+                <span>Instant Demo Candidate Log In</span>
               </button>
-            </form>
+            </div>
           )}
 
           {/* STEP 2: Enter 6-Digit OTP */}
@@ -235,7 +271,7 @@ export default function LoginPage() {
             <form onSubmit={handleVerifyOtp} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-gray-700 text-center block">
-                  Enter 6-Digit Code
+                  Enter 6-Digit Login Code
                 </label>
                 <OtpInput value={otp} onChange={setOtp} disabled={isLoading} />
               </div>
@@ -249,7 +285,7 @@ export default function LoginPage() {
                   <RefreshCw className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <span>Verify & Sign In</span>
+                    <span>Verify & Log In</span>
                     <CheckCircle2 className="w-4 h-4" />
                   </>
                 )}
@@ -289,8 +325,9 @@ export default function LoginPage() {
 
       {/* Footer */}
       <footer className="border-t border-gray-200 py-6 px-6 sm:px-12 text-center text-xs text-gray-500">
-        PlacifyAI — Passwordless Authentication System.
+        PlacifyAI — Career Intelligence & Placement System.
       </footer>
     </div>
   );
 }
+

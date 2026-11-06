@@ -146,7 +146,7 @@ export async function sendOtpEmail(email: string, otp: string, userName: string 
                     
                     <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #4B5563;">
                       Hello <strong>${userName}</strong>,<br>
-                      Use the single-use verification code below to securely sign in and access your <strong>Placement Readiness Dashboard</strong>.
+                      Use the single-use verification code below to securely log in and access your <strong>Placement Readiness Dashboard</strong>.
                     </p>
 
                     <!-- Large OTP Code Box -->

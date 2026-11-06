@@ -26,6 +26,10 @@ export default function RegisterPage() {
   const [resendTimer, setResendTimer] = useState(0);
 
   useEffect(() => {
+    document.title = 'Create Account | PlacifyAI';
+  }, []);
+
+  useEffect(() => {
     let interval: any;
     if (resendTimer > 0) {
       interval = setInterval(() => {
@@ -156,7 +160,7 @@ export default function RegisterPage() {
         <div className="text-xs text-gray-500 font-medium">
           Already have an account?{' '}
           <Link href="/login" className="font-bold text-black hover:underline">
-            Log in
+            Log In
           </Link>
         </div>
       </header>

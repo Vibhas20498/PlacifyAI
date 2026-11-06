@@ -34,14 +34,8 @@ export async function POST(request: Request) {
               { status: 409 }
             );
           }
-        } else if (purpose === 'login') {
-          if (!existingProfile) {
-            return NextResponse.json(
-              { error: 'No account found with this email address. Please create an account first.' },
-              { status: 404 }
-            );
-          }
         }
+        // For purpose === 'login', allow existing candidates and new logins seamlessly
       } catch (dbCheckErr) {
         console.warn('[Supabase Account Check Warning]:', dbCheckErr);
       }
