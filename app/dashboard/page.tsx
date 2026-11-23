@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   ExternalLink,
+  Swords,
 } from 'lucide-react';
 import { generateLinkedInJobsForRole, buildLinkedInJobSearchUrl } from '@/lib/linkedin/job-radar';
 
@@ -466,7 +467,7 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Card 1 */}
             <div className="p-5 rounded-2xl border border-gray-200 bg-gray-50/60 hover:bg-white hover:border-black transition-all space-y-3 shadow-2xs group card-hover-lift">
               <div className="flex items-center justify-between">
@@ -538,6 +539,32 @@ export default function DashboardPage() {
                 className="text-xs font-semibold text-black group-hover:underline inline-flex items-center gap-1 pt-1"
               >
                 <span>Start Mock Session</span>
+                <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
+
+            {/* Card 4: Placement Drive War Room */}
+            <div className="p-5 rounded-2xl border border-rose-200 bg-rose-50/50 hover:bg-white hover:border-black transition-all space-y-3 shadow-2xs group card-hover-lift">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold bg-rose-600 text-white px-2.5 py-0.5 rounded-full font-mono tracking-tight shadow-xs">
+                  4-ROUND DRIVE
+                </span>
+                <span className="text-[11px] text-rose-700 font-bold font-mono">Live</span>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-black font-heading group-hover:text-black flex items-center gap-1.5">
+                  <Swords className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>Placement War Room</span>
+                </h4>
+                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                  Compete in TCS Digital, Google SDE, or Zepto 4-round elimination drives and win an official Offer Letter.
+                </p>
+              </div>
+              <Link
+                href="/placement-war-room"
+                className="text-xs font-bold text-rose-700 group-hover:underline inline-flex items-center gap-1 pt-1"
+              >
+                <span>Enter War Room</span>
                 <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>

@@ -18,6 +18,7 @@ import {
   Sparkles,
   FileDown,
   X,
+  Swords,
 } from 'lucide-react';
 import { useUser } from '@/lib/store/user-context';
 
@@ -41,6 +42,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
     { name: 'Learning Roadmap', href: '/learning-roadmap', icon: Map },
     { name: 'AI Career Coach', href: '/ai-coach', icon: MessageSquare },
     { name: 'Mock Interview', href: '/mock-interview', icon: Mic },
+    { name: 'Drive War Room', href: '/placement-war-room', icon: Swords, badge: 'Live' },
     { name: 'Job Recommendations', href: '/jobs', icon: Sparkles },
   ];
 
