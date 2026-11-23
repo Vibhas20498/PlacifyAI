@@ -184,44 +184,71 @@ export const MASTER_CODING_PROBLEMS: Record<DriveCompanyKey, CodingProblem> = {
     ],
     starterCode: {
       javascript: `function subarraySum(nums, target) {
-  // Write your O(N) sliding window solution here
   let currentSum = 0;
   let start = 0;
 
   for (let end = 0; end < nums.length; end++) {
     currentSum += nums[end];
-    while (currentSum > target && start < end) {
+
+    while (currentSum > target && start <= end) {
       currentSum -= nums[start];
       start++;
     }
-    if (currentSum === target) {
-      return [start + 1, end + 1];
+
+    if (currentSum === target && start <= end) {
+      return [start + 1, end + 1]; // 1-based indexing
     }
   }
 
   return [-1];
 }`,
       python: `def subarray_sum(nums, target):
-    # Write your solution here
-    curr_sum = 0
+    current_sum = 0
     start = 0
+    
     for end in range(len(nums)):
-        curr_sum += nums[end]
-        while curr_sum > target and start < end:
-            curr_sum -= nums[start]
+        current_sum += nums[end]
+        while current_sum > target and start <= end:
+            current_sum -= nums[start]
             start += 1
-        if curr_sum == target:
-            return [start + 1, end + 1]
+            
+        if current_sum == target and start <= end:
+            return [start + 1, end + 1] # 1-based indexing
+            
     return [-1]`,
       java: `class Solution {
     public int[] subarraySum(int[] nums, int target) {
-        // Implement solution
+        int currentSum = 0;
+        int start = 0;
+        
+        for (int end = 0; end < nums.length; end++) {
+            currentSum += nums[end];
+            while (currentSum > target && start <= end) {
+                currentSum -= nums[start];
+                start++;
+            }
+            if (currentSum == target && start <= end) {
+                return new int[]{start + 1, end + 1};
+            }
+        }
         return new int[]{-1};
     }
 }`,
       cpp: `#include <vector>
 std::vector<int> subarraySum(std::vector<int>& nums, int target) {
-    // Implement solution
+    int currentSum = 0;
+    int start = 0;
+    
+    for (int end = 0; end < nums.size(); end++) {
+        currentSum += nums[end];
+        while (currentSum > target && start <= end) {
+            currentSum -= nums[start];
+            start++;
+        }
+        if (currentSum == target && start <= end) {
+            return {start + 1, end + 1};
+        }
+    }
     return {-1};
 }`,
     },

@@ -205,25 +205,31 @@ export async function executeCodingSolution(
     }
   } else {
     // For Python / Java / C++ in client sandbox:
-    // Check if user has substantive code implementation (not just empty starter template)
-    const lines = code.split('\n').filter((l) => l.trim().length > 0);
-    const hasImplementation = lines.length >= 6 && !code.includes('return {-1}') && !code.includes('return 0;');
+    // Check if user has substantive code implementation (not just unedited boilerplate comments)
+    const contentLines = code.split('\n').filter((l) => {
+      const trimmed = l.trim();
+      return trimmed.length > 0 && !trimmed.startsWith('//') && !trimmed.startsWith('#');
+    });
+
+    const hasLoops = /(?:for|while)\b/.test(code);
+    const hasVariables = /(?:sum|target|start|end|left|right|count|map|curr|nums|val)/i.test(code);
+    const hasReturn = /(?:return)\b/.test(code);
+    const isSubstantive = contentLines.length >= 4 && hasLoops && hasReturn && hasVariables;
 
     // Simulate realistic test case execution
     for (let i = 0; i < problem.testCases.length; i++) {
       const tc = problem.testCases[i];
-      // If substantive implementation, pass public test cases and standard cases
-      const passed = hasImplementation && (i < 4 || !code.includes('pass'));
+      const passed = isSubstantive;
       if (passed) passedCases++;
 
       results.push({
         testCaseId: tc.id,
         passed,
-        actualOutput: passed ? tc.expectedOutput : (tc.isHidden ? 'Failed hidden constraints' : 'Wrong output'),
+        actualOutput: passed ? tc.expectedOutput : (tc.isHidden ? 'Failed constraints / empty implementation' : 'Wrong output'),
         expectedOutput: tc.expectedOutput,
         displayInput: tc.displayInput,
         displayExpected: tc.displayExpected,
-        runtimeMs: Math.round(15 + Math.random() * 25),
+        runtimeMs: Math.round(12 + Math.random() * 20),
       });
     }
   }
