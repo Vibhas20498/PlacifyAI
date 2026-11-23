@@ -123,8 +123,8 @@ MANDATORY RULES:
   "whyItWorked": "Brief explanation of why this increases ATS score"
 }`;
 
-  // Try gemini-1.5-flash first, fallback to gemini-2.0-flash
-  const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+  // Try modern Gemini Flash models with graceful fallback
+  const models = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
 
   for (const model of models) {
     try {

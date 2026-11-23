@@ -247,23 +247,32 @@ Respond ONLY with a valid JSON array of questions matching this exact schema:
   let responseText = '';
 
   if (provider === 'gemini') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7, // High temperature for diverse, non-repeating questions
-          maxOutputTokens: 2500,
-          responseMimeType: 'application/json',
-        },
-      }),
-    });
+    const candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+    for (const model of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.7, // High temperature for diverse, non-repeating questions
+              maxOutputTokens: 2500,
+              responseMimeType: 'application/json',
+            },
+          }),
+        });
 
-    if (!res.ok) throw new Error(`Gemini API returned HTTP ${res.status}`);
-    const data = await res.json();
-    responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (res.ok) {
+          const data = await res.json();
+          responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (responseText) break;
+        }
+      } catch (err) {
+        // try next model
+      }
+    }
   } else if (provider === 'openai') {
     const url = 'https://api.openai.com/v1/chat/completions';
     const res = await fetch(url, {
@@ -914,22 +923,31 @@ Respond ONLY with valid JSON matching this schema:
   let responseText = '';
 
   if (provider === 'gemini') {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 1500,
-          responseMimeType: 'application/json',
-        },
-      }),
-    });
-    if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
-    const data = await res.json();
-    responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-1.5-flash'];
+    for (const model of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: 1500,
+              responseMimeType: 'application/json',
+            },
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (responseText) break;
+        }
+      } catch (err) {
+        // try next candidate model
+      }
+    }
   } else if (provider === 'openai') {
     const url = 'https://api.openai.com/v1/chat/completions';
     const res = await fetch(url, {
