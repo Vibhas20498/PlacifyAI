@@ -49,6 +49,7 @@ import {
   Key,
   X,
   ExternalLink,
+  RotateCcw,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -113,6 +114,17 @@ export default function ResumeAnalyzerPage() {
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isSavedToProfile, setIsSavedToProfile] = useState(false);
+
+  // Interactive Live Re-Score Sandbox State
+  const [appliedBulletIndices, setAppliedBulletIndices] = useState<number[]>([]);
+  const [liveScoreDeltaBanner, setLiveScoreDeltaBanner] = useState<{
+    prevScore: number;
+    newScore: number;
+    delta: number;
+    original: string;
+    applied: string;
+    pillarImprovements: string[];
+  } | null>(null);
 
   // Check backend AI configuration status
   useEffect(() => {
@@ -327,12 +339,149 @@ export default function ResumeAnalyzerPage() {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
+  // Helper to replace a bullet in full text preserving formatting/prefixes
+  const replaceBulletInResumeText = (fullText: string, originalBullet: string, newBullet: string): string => {
+    if (!fullText) return `- ${newBullet}`;
+
+    if (fullText.includes(originalBullet)) {
+      return fullText.replace(originalBullet, newBullet);
+    }
+
+    const cleanOriginal = originalBullet.replace(/^[-•*–—\d\.\)]+\s*/, '').trim();
+    const cleanNew = newBullet.replace(/^[-•*–—\d\.\)]+\s*/, '').trim();
+
+    const lines = fullText.split('\n');
+    let replaced = false;
+
+    const newLines = lines.map((line) => {
+      if (!replaced) {
+        const cleanLine = line.replace(/^[-•*–—\d\.\)]+\s*/, '').trim();
+        if (
+          cleanLine === cleanOriginal ||
+          (cleanOriginal.length > 20 && cleanLine.includes(cleanOriginal)) ||
+          (cleanLine.length > 20 && cleanOriginal.includes(cleanLine))
+        ) {
+          replaced = true;
+          const matchPrefix = line.match(/^(\s*[-•*–—\d\.\)]*\s*)/);
+          const prefix = matchPrefix && matchPrefix[1].trim().length > 0 ? matchPrefix[1] : '- ';
+          return `${prefix}${cleanNew}`;
+        }
+      }
+      return line;
+    });
+
+    if (replaced) {
+      return newLines.join('\n');
+    }
+
+    return `${fullText}\n- ${cleanNew}`;
+  };
+
+  // Apply a rewritten bullet directly into the resume and recalculate ATS score live
+  const handleApplyBulletToResume = async (originalBullet: string, newBullet: string, idx?: number) => {
+    if (!analysis) return;
+    const currentText = analysis.rawText || pastedText || '';
+    if (!currentText.trim()) return;
+
+    const prevScore = analysis.overallScore;
+    const updatedText = replaceBulletInResumeText(currentText, originalBullet, newBullet);
+
+    // Compute updated deterministic analysis
+    const newAnalysis = analyzeResumeContent(
+      updatedText,
+      selectedRole,
+      analysis.fileName,
+      analysis.fileSize
+    );
+
+    // Identify which pillars improved
+    const pillarImprovements: string[] = [];
+    if (newAnalysis.checks.actionVerbs.score > analysis.checks.actionVerbs.score) {
+      pillarImprovements.push(`Action Verbs (${analysis.checks.actionVerbs.score} → ${newAnalysis.checks.actionVerbs.score}/25)`);
+    }
+    if (newAnalysis.checks.measurableResults.score > analysis.checks.measurableResults.score) {
+      pillarImprovements.push(`Measurable Impact (${analysis.checks.measurableResults.score} → ${newAnalysis.checks.measurableResults.score}/25)`);
+    }
+    if (newAnalysis.checks.keywordMatch.score > analysis.checks.keywordMatch.score) {
+      pillarImprovements.push(`Keyword Match (${analysis.checks.keywordMatch.score} → ${newAnalysis.checks.keywordMatch.score}/35)`);
+    }
+
+    // Keep RAG reasoning aligned with updated score
+    if (analysis.ragAnalysis) {
+      newAnalysis.ragAnalysis = {
+        ...analysis.ragAnalysis,
+        deterministicScoreExplanation: {
+          ...analysis.ragAnalysis.deterministicScoreExplanation,
+          atsScore: newAnalysis.overallScore,
+          scoreCategory: newAnalysis.scoreCategory,
+        },
+      };
+    }
+
+    const delta = newAnalysis.overallScore - prevScore;
+
+    setAnalysis(newAnalysis);
+    setPastedText(updatedText);
+    updateResumeAts(newAnalysis.overallScore);
+
+    if (idx !== undefined) {
+      setAppliedBulletIndices((prev) => Array.from(new Set([...prev, idx])));
+    }
+
+    setLiveScoreDeltaBanner({
+      prevScore,
+      newScore: newAnalysis.overallScore,
+      delta,
+      original: originalBullet,
+      applied: newBullet,
+      pillarImprovements,
+    });
+  };
+
+  // Undo an applied bullet and revert to original score
+  const handleUndoBullet = async (originalBullet: string, appliedBullet: string, idx?: number) => {
+    if (!analysis) return;
+    const currentText = analysis.rawText || pastedText || '';
+    if (!currentText.trim()) return;
+
+    const revertedText = replaceBulletInResumeText(currentText, appliedBullet, originalBullet);
+    const reAnalysis = analyzeResumeContent(
+      revertedText,
+      selectedRole,
+      analysis.fileName,
+      analysis.fileSize
+    );
+
+    if (analysis.ragAnalysis) {
+      reAnalysis.ragAnalysis = {
+        ...analysis.ragAnalysis,
+        deterministicScoreExplanation: {
+          ...analysis.ragAnalysis.deterministicScoreExplanation,
+          atsScore: reAnalysis.overallScore,
+          scoreCategory: reAnalysis.scoreCategory,
+        },
+      };
+    }
+
+    setAnalysis(reAnalysis);
+    setPastedText(revertedText);
+    updateResumeAts(reAnalysis.overallScore);
+
+    if (idx !== undefined) {
+      setAppliedBulletIndices((prev) => prev.filter((i) => i !== idx));
+    }
+
+    setLiveScoreDeltaBanner(null);
+  };
+
   const handleResetAnalysis = () => {
     setAnalysis(null);
     setIsScanning(false);
     setPastedText('');
     setRewrittenBulletResult(null);
     setUserBulletInput('');
+    setAppliedBulletIndices([]);
+    setLiveScoreDeltaBanner(null);
   };
 
   return (
@@ -576,6 +725,80 @@ export default function ResumeAnalyzerPage() {
         {/* RESULTS SECTION (Rendered only when a real resume is analyzed and not actively scanning) */}
         {analysis && !isScanning && (
           <div className="space-y-8 animate-in fade-in duration-300">
+            {/* LIVE SCORE BOOST BANNER (Shown dynamically when a bullet is applied & re-scored) */}
+            <AnimatePresence>
+              {liveScoreDeltaBanner && (
+                <motion.div
+                  initial={{ opacity: 0, y: -16, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -12, scale: 0.98 }}
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  className="rounded-3xl border-2 border-emerald-500 bg-emerald-950 text-white p-5 sm:p-6 shadow-xl relative overflow-hidden space-y-3"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-black flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
+                        <TrendingUp className="w-5 h-5 text-black" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-extrabold uppercase font-mono px-2.5 py-0.5 rounded-full bg-emerald-400 text-black">
+                            {liveScoreDeltaBanner.delta > 0
+                              ? `+${liveScoreDeltaBanner.delta} Points Boost`
+                              : 'Resume Bullet Updated'}
+                          </span>
+                          <span className="text-xs text-emerald-300 font-semibold font-mono">
+                            {liveScoreDeltaBanner.prevScore} ➔ {liveScoreDeltaBanner.newScore}/100 ATS
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-white mt-1">
+                          Bullet Point Applied Directly to Active Resume & Re-Scored Live!
+                        </h4>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleUndoBullet(
+                            liveScoreDeltaBanner.original,
+                            liveScoreDeltaBanner.applied
+                          )
+                        }
+                        className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors border border-white/20"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-white" />
+                        <span>Undo Change</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLiveScoreDeltaBanner(null)}
+                        className="p-1.5 rounded-xl text-emerald-300 hover:text-white hover:bg-white/10 transition-colors"
+                        aria-label="Dismiss banner"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {liveScoreDeltaBanner.pillarImprovements.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-emerald-900/80 text-xs text-emerald-200">
+                      <span className="text-[11px] font-bold text-emerald-400 font-mono">Pillars Improved:</span>
+                      {liveScoreDeltaBanner.pillarImprovements.map((p, i) => (
+                        <span
+                          key={i}
+                          className="px-2.5 py-0.5 rounded-md bg-emerald-900/90 border border-emerald-700/60 text-[11px] font-semibold text-emerald-100"
+                        >
+                          ✓ {p}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* SCORE HERO BANNER */}
             <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-gray-100">
@@ -809,6 +1032,9 @@ export default function ResumeAnalyzerPage() {
                   <RagIntelligenceCard
                     ragAnalysis={analysis.ragAnalysis}
                     targetRole={selectedRole}
+                    onApplyBullet={handleApplyBulletToResume}
+                    onUndoBullet={handleUndoBullet}
+                    appliedBulletIndices={appliedBulletIndices}
                   />
                 ) : (
                   <div className="bg-white border border-gray-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
@@ -1230,7 +1456,15 @@ export default function ResumeAnalyzerPage() {
                               </p>
                             </div>
 
-                            <div className="pt-2 flex justify-end">
+                            <div className="pt-2 flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleApplyBulletToResume(userBulletInput, s.rewritten)}
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+                              >
+                                <Sparkles className="w-3 h-3 text-emerald-200" />
+                                <span>Apply & Re-Score</span>
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => handleCopyText(`rewritten-${idx}`, s.rewritten)}
@@ -1295,6 +1529,7 @@ export default function ResumeAnalyzerPage() {
                           'Deployed cloud microservices on AWS with Docker.',
                         ]
                   }
+                  onApplyBullet={(orig, rew) => handleApplyBulletToResume(orig, rew)}
                 />
               </div>
             )}

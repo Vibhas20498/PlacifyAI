@@ -22,13 +22,18 @@ import {
 
 interface MultiToneRewriterCardProps {
   bulletList: string[];
+  onApplyBullet?: (original: string, rewritten: string) => void;
 }
 
-export function MultiToneRewriterCard({ bulletList }: MultiToneRewriterCardProps) {
+export function MultiToneRewriterCard({
+  bulletList,
+  onApplyBullet,
+}: MultiToneRewriterCardProps) {
   const [selectedBulletIndex, setSelectedBulletIndex] = useState(0);
   const [customInput, setCustomInput] = useState('');
   const [activeTone, setActiveTone] = useState<BulletTone>('scale');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [isApplied, setIsApplied] = useState(false);
 
   const activeBullet =
     customInput.trim() ||
@@ -186,14 +191,30 @@ export function MultiToneRewriterCard({ bulletList }: MultiToneRewriterCardProps
           <p className="text-[11px] text-gray-500">
             {currentToneOption.description}
           </p>
-          <button
-            type="button"
-            onClick={() => handleCopy(activeTone, currentToneOption.rewritten)}
-            className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs shrink-0 self-end sm:self-auto"
-          >
-            {copiedKey === activeTone ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedKey === activeTone ? 'Copied to Clipboard!' : 'Copy Rewritten Bullet'}</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            {onApplyBullet && (
+              <button
+                type="button"
+                onClick={() => {
+                  onApplyBullet(activeBullet, currentToneOption.rewritten);
+                  setIsApplied(true);
+                  setTimeout(() => setIsApplied(false), 3000);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs"
+              >
+                {isApplied ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                <span>{isApplied ? 'Applied to Resume!' : 'Apply & Re-Score'}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => handleCopy(activeTone, currentToneOption.rewritten)}
+              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs"
+            >
+              {copiedKey === activeTone ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedKey === activeTone ? 'Copied!' : 'Copy Rewritten Bullet'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

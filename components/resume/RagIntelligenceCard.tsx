@@ -26,12 +26,16 @@ import {
   XCircle,
   Filter,
   RefreshCw,
+  RotateCcw,
 } from 'lucide-react';
 import { StructuredRAGAnalysis } from '@/lib/rag-engine/types';
 
 interface RagIntelligenceCardProps {
   ragAnalysis: StructuredRAGAnalysis;
   targetRole: string;
+  onApplyBullet?: (originalBullet: string, newBullet: string, idx: number) => void;
+  onUndoBullet?: (originalBullet: string, newBullet: string, idx: number) => void;
+  appliedBulletIndices?: number[];
 }
 
 type RAGViewFilter = 'all' | 'blockers' | 'rewrites' | 'strengths-weaknesses' | 'sections';
@@ -39,6 +43,9 @@ type RAGViewFilter = 'all' | 'blockers' | 'rewrites' | 'strengths-weaknesses' | 
 export function RagIntelligenceCard({
   ragAnalysis,
   targetRole,
+  onApplyBullet,
+  onUndoBullet,
+  appliedBulletIndices = [],
 }: RagIntelligenceCardProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [showRAGSources, setShowRAGSources] = useState(false);
@@ -427,7 +434,7 @@ export function RagIntelligenceCard({
                           </strong>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
                             disabled={isRegenerating[idx]}
@@ -462,6 +469,51 @@ export function RagIntelligenceCard({
                               </>
                             )}
                           </button>
+
+                          {/* Direct Apply to Resume & Live Re-Score */}
+                          {onApplyBullet && (
+                            appliedBulletIndices.includes(idx) ? (
+                              <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-200">
+                                <span className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                                  <span>Applied to Resume</span>
+                                </span>
+                                {onUndoBullet && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      onUndoBullet(
+                                        item.originalBullet,
+                                        bulletOverrides[idx]?.text || item.suggestedVersion,
+                                        idx
+                                      )
+                                    }
+                                    className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 text-xs font-semibold flex items-center gap-1 transition-all"
+                                    title="Revert to original bullet point in resume"
+                                  >
+                                    <RotateCcw className="w-3 h-3 text-gray-600" />
+                                    <span>Undo</span>
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onApplyBullet(
+                                    item.originalBullet,
+                                    bulletOverrides[idx]?.text || item.suggestedVersion,
+                                    idx
+                                  )
+                                }
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                                title="Apply this improved bullet point to your active resume and recalculate ATS score live"
+                              >
+                                <Sparkles className="w-3.5 h-3.5 text-emerald-200 animate-pulse" />
+                                <span>Apply & Live Re-Score</span>
+                              </button>
+                            )
+                          )}
                         </div>
                       </div>
                     </div>
