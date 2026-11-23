@@ -88,9 +88,9 @@ export function EcosystemBridgeCards({
           </div>
         </Link>
 
-        {/* BRIDGE 3: AI Mock Interview Coach */}
+        {/* BRIDGE 3: AI Mock Interview Engine */}
         <Link
-          href="/ai-coach"
+          href={`/mock-interview?source=resume&role=${encodeURIComponent(targetRole)}&type=resume-based`}
           className="group bg-white p-5 rounded-3xl border border-gray-200 hover:border-black hover:shadow-md transition-all space-y-3 flex flex-col justify-between"
         >
           <div className="space-y-2">

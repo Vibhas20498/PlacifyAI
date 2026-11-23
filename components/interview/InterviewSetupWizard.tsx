@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Sparkles,
@@ -88,6 +88,41 @@ export function InterviewSetupWizard({
   const [includeCoding, setIncludeCoding] = useState(true);
   const [feedbackTiming, setFeedbackTiming] = useState<'realistic' | 'practice'>('practice');
   const [mode, setMode] = useState<'text' | 'voice'>('text');
+  const [fromResumeBridge, setFromResumeBridge] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('source') === 'resume') {
+        setFromResumeBridge(true);
+        const role = params.get('role');
+        const company = params.get('company');
+        const type = params.get('type') as InterviewType;
+        if (role) {
+          if (COMMON_ROLES.includes(role as any)) {
+            setTargetRole(role as InterviewRole);
+          } else {
+            setIsCustomRole(true);
+            setCustomRole(role);
+          }
+        }
+        if (company) {
+          if (TARGET_COMPANIES.includes(company as any)) {
+            setTargetCompany(company as InterviewCompany);
+          } else {
+            setIsCustomCompany(true);
+            setCustomCompany(company);
+          }
+        }
+        if (type && ['technical', 'resume-based', 'behavioral', 'coding', 'mixed'].includes(type)) {
+          setInterviewType(type);
+        } else {
+          setInterviewType('resume-based');
+        }
+        setUseAnalyzedResume(true);
+      }
+    }
+  }, []);
 
   const selectedRole = isCustomRole && customRole.trim() ? customRole.trim() : targetRole;
   const selectedCompany = isCustomCompany && customCompany.trim() ? customCompany.trim() : targetCompany;
@@ -114,6 +149,31 @@ export function InterviewSetupWizard({
 
   return (
     <form onSubmit={handleStart} className="space-y-8 max-w-4xl mx-auto">
+      {fromResumeBridge && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-4 sm:p-5 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="text-xs">
+              <span className="font-bold text-sm block text-emerald-950">
+                Resume-Grounded Interview Mode Active
+              </span>
+              <p className="text-emerald-800 mt-0.5">
+                Target role, company, and project context pre-loaded from your recent Resume Analysis. Questions will test your real projects and technical stack.
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-emerald-200/80 text-emerald-900 shrink-0">
+            Resume Linked
+          </span>
+        </motion.div>
+      )}
+
       {/* Step 1: Target Role & Company */}
       <div className="bg-white border border-gray-200/90 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xs card-hover-lift">
         <div className="flex items-center gap-3 pb-4 border-b border-gray-100">

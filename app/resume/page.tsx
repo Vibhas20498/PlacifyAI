@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { AnimatedTabs, TabItem } from '@/components/ui/AnimatedTabs';
@@ -50,6 +50,7 @@ import {
   X,
   ExternalLink,
   RotateCcw,
+  Building2,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -63,10 +64,17 @@ import { InlineResumeEditor } from '@/components/resume/InlineResumeEditor';
 import { ResumeVersionComparator } from '@/components/resume/ResumeVersionComparator';
 import { EcosystemBridgeCards } from '@/components/resume/EcosystemBridgeCards';
 import { RagIntelligenceCard } from '@/components/resume/RagIntelligenceCard';
+import { PageBudgetCard } from '@/components/resume/PageBudgetCard';
+import { CompanyProfileCard } from '@/components/resume/CompanyProfileCard';
+import { MockInterviewBridgeCard } from '@/components/resume/MockInterviewBridgeCard';
+import { calculatePageBudget } from '@/lib/resume/page-budget';
+import { CompanyProfileKey, evaluateCompanyProfile } from '@/lib/resume/company-profiles';
 
 const RESUME_TABS: TabItem[] = [
   { id: 'rag-intelligence', label: 'AI Intelligence', icon: Brain, badge: 'AI' },
   { id: 'overview', label: 'Overview & 4 Pillars', icon: Layers },
+  { id: 'page-budget', label: '1-Page Budget', icon: FileText, badge: 'Strict' },
+  { id: 'company-fit', label: 'Company Screening', icon: Building2, badge: 'Cutoffs' },
   { id: 'jd-match', label: 'Target JD Matcher', icon: Briefcase },
   { id: 'heatmap', label: 'Recruiter Heatmap', icon: Eye },
   { id: 'rewriter', label: 'Multi-Tone Rewriter', icon: Wand2 },
@@ -91,8 +99,9 @@ export default function ResumeAnalyzerPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [analysisTab, setAnalysisTab] = useState<
-    'rag-intelligence' | 'overview' | 'jd-match' | 'heatmap' | 'rewriter' | 'buzzwords' | 'editor' | 'versions'
+    'rag-intelligence' | 'overview' | 'page-budget' | 'company-fit' | 'jd-match' | 'heatmap' | 'rewriter' | 'buzzwords' | 'editor' | 'versions'
   >('rag-intelligence');
+  const [selectedCompanyProfile, setSelectedCompanyProfile] = useState<CompanyProfileKey>('general');
 
   const [analysis, setAnalysis] = useState<DetailedResumeAnalysis | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -125,6 +134,27 @@ export default function ResumeAnalyzerPage() {
     applied: string;
     pillarImprovements: string[];
   } | null>(null);
+
+  // 1-Page Budget & Length Estimator (Suggestion 2)
+  const pageBudget = useMemo(() => {
+    const raw = analysis?.rawText || pastedText || '';
+    return calculatePageBudget(raw);
+  }, [analysis?.rawText, pastedText]);
+
+  // Company-Specific ATS Screening Profile Simulator (Suggestion 3)
+  const companyEvaluation = useMemo(() => {
+    if (!analysis) return null;
+    const raw = analysis.rawText || pastedText || '';
+    return evaluateCompanyProfile(
+      raw,
+      analysis.extractedProfile,
+      analysis.checks.keywordMatch.score,
+      analysis.checks.measurableResults.score,
+      analysis.checks.actionVerbs.score,
+      analysis.checks.structureAndContact.score,
+      selectedCompanyProfile
+    );
+  }, [analysis, pastedText, selectedCompanyProfile]);
 
   // Check backend AI configuration status
   useEffect(() => {
@@ -898,7 +928,7 @@ export default function ResumeAnalyzerPage() {
                   </span>
                 </div>
 
-                <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {/* Step 1: Fix Blockers */}
                   <button
                     type="button"
@@ -907,7 +937,7 @@ export default function ResumeAnalyzerPage() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] font-extrabold uppercase font-mono px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">
-                        Priority 1 • Start Here
+                        Priority 1 • Blockers
                       </span>
                       <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                     </div>
@@ -932,7 +962,7 @@ export default function ResumeAnalyzerPage() {
                       <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                     </div>
                     <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
-                      Copy Optimized Bullet Points
+                      Copy Optimized Bullets
                     </h4>
                     <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
                       Replace passive sentences with high-impact, quantifiable accomplishment statements.
@@ -956,6 +986,34 @@ export default function ResumeAnalyzerPage() {
                     </h4>
                     <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
                       Inject {analysis.checks.keywordMatch.missingSkills.slice(0, 3).join(', ') || 'essential skills'} into your profile & projects.
+                    </p>
+                  </button>
+
+                  {/* Step 4: Strict 1-Page Budget (Suggestion 2) */}
+                  <button
+                    type="button"
+                    onClick={() => setAnalysisTab('page-budget')}
+                    className="p-4 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/80 text-left transition-all group card-hover-lift"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        className={`text-[10px] font-extrabold uppercase font-mono px-2 py-0.5 rounded border ${
+                          pageBudget.status === 'safe'
+                            ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                            : 'bg-amber-950 text-amber-300 border-amber-800'
+                        }`}
+                      >
+                        {pageBudget.pageEstimate} Pgs • {pageBudget.status === 'safe' ? 'Safe' : 'Spillover'}
+                      </span>
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
+                      1-Page Budget & Economy
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                      {pageBudget.status === 'safe'
+                        ? 'Safe 1-page fit. Won\'t spill when printed or submitted to ATS.'
+                        : `Warning: Content spills ~${pageBudget.spilloverLines} lines onto Page 2. Click to trim.`}
                     </p>
                   </button>
                 </div>
@@ -1489,6 +1547,42 @@ export default function ResumeAnalyzerPage() {
                     </div>
                   )}
                 </div>
+
+                {/* 1-PAGE BUDGET & ECONOMY (Suggestion 2) */}
+                <PageBudgetCard
+                  pageBudget={pageBudget}
+                  onApplyTrim={handleApplyBulletToResume}
+                />
+
+                {/* COMPANY ATS SCREENING PROFILE SIMULATOR (Suggestion 3) */}
+                {companyEvaluation && (
+                  <CompanyProfileCard
+                    currentProfileKey={selectedCompanyProfile}
+                    onSelectProfile={(key) => setSelectedCompanyProfile(key)}
+                    evaluation={companyEvaluation}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* TAB CONTENT: 1-PAGE BUDGET & OVERFLOW AUDIT (Suggestion 2) */}
+            {analysisTab === 'page-budget' && (
+              <div className="animate-in fade-in duration-200">
+                <PageBudgetCard
+                  pageBudget={pageBudget}
+                  onApplyTrim={handleApplyBulletToResume}
+                />
+              </div>
+            )}
+
+            {/* TAB CONTENT: COMPANY ATS SCREENING PROFILE (Suggestion 3) */}
+            {analysisTab === 'company-fit' && companyEvaluation && (
+              <div className="animate-in fade-in duration-200">
+                <CompanyProfileCard
+                  currentProfileKey={selectedCompanyProfile}
+                  onSelectProfile={(key) => setSelectedCompanyProfile(key)}
+                  evaluation={companyEvaluation}
+                />
               </div>
             )}
 
@@ -1563,6 +1657,13 @@ export default function ResumeAnalyzerPage() {
             )}
           </motion.div>
         </AnimatePresence>
+
+        {/* MOCK INTERVIEW 1-CLICK DIRECT BRIDGE (Suggestion 4) */}
+        <MockInterviewBridgeCard
+          analysis={analysis}
+          targetRole={selectedRole}
+          companyName={companyEvaluation?.profile.name || 'General Placement'}
+        />
 
         {/* PLACIFY ECOSYSTEM CAREER BRIDGES */}
         <EcosystemBridgeCards
