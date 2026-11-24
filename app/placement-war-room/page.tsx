@@ -51,8 +51,37 @@ export default function PlacementWarRoomPage() {
   const [collegeName, setCollegeName] = useState(profile.university || 'Campus Engineering Institute');
   const [qualificationNotice, setQualificationNotice] = useState<string | null>(null);
 
-  // Restore existing session on mount if active
+  // Restore existing session on mount or jump directly via URL query params (?stage=round-3-technical&company=google-sde)
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const stageParam = urlParams.get('stage') as WarRoomStage | null;
+      const companyParam = urlParams.get('company') as DriveCompanyKey | null;
+
+      const validCompany =
+        companyParam && COMPANY_DRIVE_PROFILES[companyParam]
+          ? companyParam
+          : selectedCompanyKey;
+
+      if (
+        stageParam &&
+        ['round-1-screening', 'round-2-coding', 'round-3-technical', 'round-4-hr'].includes(
+          stageParam
+        )
+      ) {
+        const directSession = initializeDriveSession(
+          validCompany,
+          candidateName.trim() || 'Placement Aspirant',
+          collegeName.trim() || 'Campus Engineering Institute'
+        );
+        directSession.currentStage = stageParam;
+        setSelectedCompanyKey(validCompany);
+        setSession(directSession);
+        saveDriveSession(directSession);
+        return;
+      }
+    }
+
     const cached = loadDriveSession();
     if (cached) {
       setSession(cached);
@@ -287,68 +316,92 @@ export default function PlacementWarRoomPage() {
           <div className="bg-white rounded-3xl border border-gray-200 p-4 sm:p-5 shadow-sm">
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 text-xs">
               {/* Step 1 */}
-              <div
-                className={`p-3 rounded-2xl border flex items-center gap-2.5 ${
+              <button
+                type="button"
+                onClick={() => {
+                  const updated: PlacementDriveSession = { ...session, currentStage: 'round-1-screening' };
+                  setSession(updated);
+                  saveDriveSession(updated);
+                }}
+                className={`p-3 rounded-2xl border flex items-center gap-2.5 transition-all text-left cursor-pointer ${
                   session.currentStage === 'round-1-screening'
-                    ? 'border-black bg-black text-white'
+                    ? 'border-black bg-black text-white shadow-xs'
                     : session.round1
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                    : 'border-gray-100 bg-gray-50 text-gray-400'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                    : 'border-gray-100 bg-gray-50 text-gray-500 hover:bg-gray-100'
                 }`}
               >
                 <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold text-[10px]">
                   1
                 </span>
                 <span className="font-bold truncate">R1: Screening</span>
-              </div>
+              </button>
 
               {/* Step 2 */}
-              <div
-                className={`p-3 rounded-2xl border flex items-center gap-2.5 ${
+              <button
+                type="button"
+                onClick={() => {
+                  const updated: PlacementDriveSession = { ...session, currentStage: 'round-2-coding' };
+                  setSession(updated);
+                  saveDriveSession(updated);
+                }}
+                className={`p-3 rounded-2xl border flex items-center gap-2.5 transition-all text-left cursor-pointer ${
                   session.currentStage === 'round-2-coding'
-                    ? 'border-black bg-black text-white'
+                    ? 'border-black bg-black text-white shadow-xs'
                     : session.round2
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                    : 'border-gray-100 bg-gray-50 text-gray-400'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                    : 'border-gray-100 bg-gray-50 text-gray-500 hover:bg-gray-100'
                 }`}
               >
                 <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold text-[10px]">
                   2
                 </span>
                 <span className="font-bold truncate">R2: Coding</span>
-              </div>
+              </button>
 
               {/* Step 3 */}
-              <div
-                className={`p-3 rounded-2xl border flex items-center gap-2.5 ${
+              <button
+                type="button"
+                onClick={() => {
+                  const updated: PlacementDriveSession = { ...session, currentStage: 'round-3-technical' };
+                  setSession(updated);
+                  saveDriveSession(updated);
+                }}
+                className={`p-3 rounded-2xl border flex items-center gap-2.5 transition-all text-left cursor-pointer ${
                   session.currentStage === 'round-3-technical'
-                    ? 'border-black bg-black text-white'
+                    ? 'border-black bg-black text-white shadow-xs'
                     : session.round3
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                    : 'border-gray-100 bg-gray-50 text-gray-400'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                    : 'border-gray-100 bg-gray-50 text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold text-[10px]">
                   3
                 </span>
-                <span className="font-bold truncate">R3: Tech Defense</span>
-              </div>
+                <span className="font-bold truncate">R3: Tech Defense 🎥</span>
+              </button>
 
               {/* Step 4 */}
-              <div
-                className={`p-3 rounded-2xl border flex items-center gap-2.5 ${
+              <button
+                type="button"
+                onClick={() => {
+                  const updated: PlacementDriveSession = { ...session, currentStage: 'round-4-hr' };
+                  setSession(updated);
+                  saveDriveSession(updated);
+                }}
+                className={`p-3 rounded-2xl border flex items-center gap-2.5 transition-all text-left cursor-pointer ${
                   session.currentStage === 'round-4-hr'
-                    ? 'border-black bg-black text-white'
+                    ? 'border-black bg-black text-white shadow-xs'
                     : session.round4
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                    : 'border-gray-100 bg-gray-50 text-gray-400'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                    : 'border-gray-100 bg-gray-50 text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold text-[10px]">
                   4
                 </span>
-                <span className="font-bold truncate">R4: HR Fit</span>
-              </div>
+                <span className="font-bold truncate">R4: HR Fit 🤝</span>
+              </button>
 
               {/* Step 5: Final Verdict */}
               <div
@@ -539,6 +592,7 @@ export default function PlacementWarRoomPage() {
         {session && session.currentStage === 'round-3-technical' && (
           <Round3Technical
             company={session.company}
+            candidateName={session.candidateName}
             onCompleteRound={handleRound3Complete}
           />
         )}
@@ -547,6 +601,7 @@ export default function PlacementWarRoomPage() {
         {session && session.currentStage === 'round-4-hr' && (
           <Round4HR
             company={session.company}
+            candidateName={session.candidateName}
             onCompleteRound={handleRound4Complete}
           />
         )}

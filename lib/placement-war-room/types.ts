@@ -97,6 +97,31 @@ export interface HRInterviewQuestion {
   idealResponseCriteria: string[];
 }
 
+// AI VIRTUAL INTERVIEWER PERSONA
+export interface InterviewerPersona {
+  id: string;
+  name: string;
+  role: string;
+  companyKey: DriveCompanyKey;
+  companyName: string;
+  experience: string;
+  avatarUrl: string;
+  gender: 'male' | 'female';
+  pitch: number;
+  rate: number;
+  bio: string;
+  focusAreas: string[];
+}
+
+// MULTI-TURN COUNTER-INTERROGATION TURNS
+export interface InterviewExchangeTurn {
+  id: string;
+  speaker: 'interviewer' | 'candidate';
+  text: string;
+  isCounterQuestion?: boolean;
+  timestamp: number;
+}
+
 // PROCTOR & DRIVE SESSION STATE
 export interface PlacementDriveSession {
   company: CompanyDriveProfile;

@@ -43,6 +43,8 @@ const CATEGORY_ICONS: Record<ScreeningCategory, string> = {
   'Situational Judgment': '🤝',
 };
 
+const TOTAL_EXAM_DURATION_SECONDS = 900; // 15 minutes realistic corporate recruitment timer (20 questions @ 45s/q)
+
 export function Round1Screening({
   company,
   questions: passedQuestions,
@@ -60,7 +62,7 @@ export function Round1Screening({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [flaggedIndices, setFlaggedIndices] = useState<number[]>([]);
-  const [secondsRemaining, setSecondsRemaining] = useState(420); // 7 minutes total
+  const [secondsRemaining, setSecondsRemaining] = useState(TOTAL_EXAM_DURATION_SECONDS);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
 
@@ -132,7 +134,7 @@ export function Round1Screening({
         wrongCount,
         unansweredCount,
         passed,
-        timeTakenSeconds: 420 - secondsRemaining,
+        timeTakenSeconds: TOTAL_EXAM_DURATION_SECONDS - secondsRemaining,
       });
     }, 600);
   };
@@ -175,7 +177,7 @@ export function Round1Screening({
               </span>
             </div>
             <p className="text-xs text-gray-500 mt-0.5">
-              Sectional Aptitude, Logic, Verbal & Technical Core Examination
+              {questions.length} Questions • 15 Minutes • Sectional Aptitude, Logic, Verbal & Technical Core
             </p>
           </div>
         </div>
