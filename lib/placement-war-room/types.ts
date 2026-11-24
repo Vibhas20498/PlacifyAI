@@ -32,10 +32,17 @@ export interface CompanyDriveProfile {
   features: string[];
 }
 
-// ROUND 1: Screening Test (Aptitude + CS Core)
+// ROUND 1: Screening Test (Aptitude, Logic, Verbal, CS, Situational)
+export type ScreeningCategory = 
+  | 'Quantitative Aptitude'
+  | 'Logical Reasoning'
+  | 'Verbal Ability'
+  | 'Core CS & Technical Logic'
+  | 'Situational Judgment';
+
 export interface ScreeningQuestion {
   id: string;
-  category: 'Quantitative Aptitude' | 'Logical Reasoning' | 'Core CS & DBMS' | 'Data Structures & Algorithms';
+  category: ScreeningCategory;
   question: string;
   codeSnippet?: string;
   options: string[];
@@ -99,6 +106,8 @@ export interface PlacementDriveSession {
   startTime: number;
   tabSwitchViolations: number;
   maxViolationsAllowed: number;
+  screeningPaper?: ScreeningQuestion[];
+  codingProblem?: CodingProblem;
   
   // Round 1 Score
   round1: {

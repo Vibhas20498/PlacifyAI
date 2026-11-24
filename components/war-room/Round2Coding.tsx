@@ -17,11 +17,13 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { CompanyDriveProfile, CodingProblem } from '@/lib/placement-war-room/types';
-import { MASTER_CODING_PROBLEMS } from '@/lib/placement-war-room/drive-data';
+import { MASTER_CODING_PROBLEMS_POOL, getRandomCodingProblem } from '@/lib/placement-war-room/drive-data';
 import { executeCodingSolution } from '@/lib/placement-war-room/engine';
+import { CompanyLogo } from './CompanyLogos';
 
 interface Round2CodingProps {
   company: CompanyDriveProfile;
+  problem?: CodingProblem;
   onCompleteRound: (result: {
     problemId: string;
     passedCases: number;
@@ -38,11 +40,12 @@ interface Round2CodingProps {
 
 export function Round2Coding({
   company,
+  problem: passedProblem,
   onCompleteRound,
   tabSwitchViolations,
   onTabSwitchViolation,
 }: Round2CodingProps) {
-  const problem = MASTER_CODING_PROBLEMS[company.key] || MASTER_CODING_PROBLEMS['tcs-digital'];
+  const problem = passedProblem || getRandomCodingProblem(company.key);
   const [language, setLanguage] = useState<'javascript' | 'python' | 'java' | 'cpp'>('javascript');
   const [code, setCode] = useState(problem.starterCode.javascript);
   const [secondsRemaining, setSecondsRemaining] = useState(600); // 10 minutes coding limit
@@ -122,9 +125,9 @@ export function Round2Coding({
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Proctor & Timer Header */}
       <div className="bg-white rounded-3xl border border-gray-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-sm">
-            R2
+        <div className="flex items-center gap-3.5">
+          <div className="p-2 bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-center shrink-0">
+            <CompanyLogo companyKey={company.key} size="md" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -133,8 +136,8 @@ export function Round2Coding({
                 Need {company.round2RequiredTestCases} of 5 Test Cases
               </span>
             </div>
-            <p className="text-xs text-gray-500">
-              {company.name} • Algorithmic Challenge with Hidden Edge Constraints
+            <p className="text-xs text-gray-500 mt-0.5">
+              Algorithmic Challenge with Hidden Edge Constraints
             </p>
           </div>
         </div>

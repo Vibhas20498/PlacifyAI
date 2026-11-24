@@ -41,6 +41,7 @@ import { Round3Technical } from '@/components/war-room/Round3Technical';
 import { Round4HR } from '@/components/war-room/Round4HR';
 import { OfficialOfferLetter } from '@/components/war-room/OfficialOfferLetter';
 import { EliminationReport } from '@/components/war-room/EliminationReport';
+import { CompanyLogo } from '@/components/war-room/CompanyLogos';
 
 export default function PlacementWarRoomPage() {
   const { profile } = useUser();
@@ -436,6 +437,17 @@ export default function PlacementWarRoomPage() {
                           </span>
                         </div>
 
+                        {/* Official Company Logo Badge */}
+                        <div
+                          className={`p-3 rounded-2xl flex items-center justify-between transition-colors ${
+                            isSelected
+                              ? 'bg-white text-black shadow-xs'
+                              : 'bg-gray-50 border border-gray-100'
+                          }`}
+                        >
+                          <CompanyLogo companyKey={company.key} size="md" />
+                        </div>
+
                         <div>
                           <h3 className="text-base font-bold tracking-tight">{company.name}</h3>
                           <p
@@ -505,6 +517,7 @@ export default function PlacementWarRoomPage() {
         {session && session.currentStage === 'round-1-screening' && (
           <Round1Screening
             company={session.company}
+            questions={session.screeningPaper}
             onCompleteRound={handleRound1Complete}
             tabSwitchViolations={session.tabSwitchViolations}
             onTabSwitchViolation={handleTabSwitchViolation}
@@ -515,6 +528,7 @@ export default function PlacementWarRoomPage() {
         {session && session.currentStage === 'round-2-coding' && (
           <Round2Coding
             company={session.company}
+            problem={session.codingProblem}
             onCompleteRound={handleRound2Complete}
             tabSwitchViolations={session.tabSwitchViolations}
             onTabSwitchViolation={handleTabSwitchViolation}

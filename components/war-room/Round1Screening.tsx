@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Clock,
@@ -12,12 +12,16 @@ import {
   ArrowRight,
   Sparkles,
   Award,
+  Layers,
+  Filter,
 } from 'lucide-react';
-import { ScreeningQuestion, CompanyDriveProfile } from '@/lib/placement-war-room/types';
-import { MASTER_SCREENING_QUESTIONS } from '@/lib/placement-war-room/drive-data';
+import { ScreeningQuestion, ScreeningCategory, CompanyDriveProfile } from '@/lib/placement-war-room/types';
+import { MASTER_QUESTION_BANK, generateRandomizedScreeningPaper } from '@/lib/placement-war-room/drive-data';
+import { CompanyLogo } from './CompanyLogos';
 
 interface Round1ScreeningProps {
   company: CompanyDriveProfile;
+  questions?: ScreeningQuestion[];
   onCompleteRound: (result: {
     score: number;
     totalPossible: number;
@@ -31,18 +35,34 @@ interface Round1ScreeningProps {
   onTabSwitchViolation: () => void;
 }
 
+const CATEGORY_ICONS: Record<ScreeningCategory, string> = {
+  'Quantitative Aptitude': '📊',
+  'Logical Reasoning': '🧠',
+  'Verbal Ability': '📝',
+  'Core CS & Technical Logic': '💻',
+  'Situational Judgment': '🤝',
+};
+
 export function Round1Screening({
   company,
+  questions: passedQuestions,
   onCompleteRound,
   tabSwitchViolations,
   onTabSwitchViolation,
 }: Round1ScreeningProps) {
-  const questions = MASTER_SCREENING_QUESTIONS;
+  // Use passed randomized paper or generate fresh one
+  const questions = useMemo(() => {
+    return passedQuestions && passedQuestions.length > 0
+      ? passedQuestions
+      : generateRandomizedScreeningPaper(company.key);
+  }, [passedQuestions, company.key]);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [flaggedIndices, setFlaggedIndices] = useState<number[]>([]);
-  const [secondsRemaining, setSecondsRemaining] = useState(300); // 5 minutes rapid-fire
+  const [secondsRemaining, setSecondsRemaining] = useState(420); // 7 minutes total
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
 
   // Proctor: Detect tab switches and window blur
   useEffect(() => {
@@ -112,7 +132,7 @@ export function Round1Screening({
         wrongCount,
         unansweredCount,
         passed,
-        timeTakenSeconds: 300 - secondsRemaining,
+        timeTakenSeconds: 420 - secondsRemaining,
       });
     }, 600);
   };
@@ -120,25 +140,42 @@ export function Round1Screening({
   const minutes = Math.floor(secondsRemaining / 60);
   const seconds = secondsRemaining % 60;
   const timeFormatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  const currentQ = questions[currentIndex];
+  const currentQ = questions[currentIndex] || questions[0];
+
+  // Distinct categories present in active paper
+  const categoriesPresent = useMemo(() => {
+    const set = new Set<ScreeningCategory>();
+    questions.forEach((q) => set.add(q.category));
+    return Array.from(set);
+  }, [questions]);
+
+  // Questions filtered for palette view
+  const filteredIndices = useMemo(() => {
+    if (selectedCategoryFilter === 'all') {
+      return questions.map((_, i) => i);
+    }
+    return questions
+      .map((q, i) => (q.category === selectedCategoryFilter ? i : -1))
+      .filter((i) => i !== -1);
+  }, [questions, selectedCategoryFilter]);
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Proctor & Timer Header Bar */}
+    <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Proctor & Timer Header Bar with Official Company Logo */}
       <div className="bg-white rounded-3xl border border-gray-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-sm">
-            R1
+        <div className="flex items-center gap-3.5">
+          <div className="p-2 bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-center shrink-0">
+            <CompanyLogo companyKey={company.key} size="md" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-gray-900">Round 1: Online Screening Test</h2>
+              <h2 className="text-sm font-bold text-gray-900">Round 1: Screening Test</h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                 Cutoff: {company.round1CutoffPercent}%
               </span>
             </div>
-            <p className="text-xs text-gray-500">
-              {company.name} • Rapid-fire Quant, Logic & Core CS
+            <p className="text-xs text-gray-500 mt-0.5">
+              Sectional Aptitude, Logic, Verbal & Technical Core Examination
             </p>
           </div>
         </div>
@@ -154,7 +191,7 @@ export function Round1Screening({
           >
             <ShieldAlert className="w-3.5 h-3.5" />
             <span>
-              Proctor: {tabSwitchViolations}/3 Tab Violations
+              Proctor: {tabSwitchViolations}/3 Tab Switches
             </span>
           </div>
 
@@ -172,22 +209,83 @@ export function Round1Screening({
         </div>
       </div>
 
+      {/* SECTIONAL CATEGORY NAVIGATION BAR */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-2 sm:p-2.5 shadow-2xs">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+          <button
+            type="button"
+            onClick={() => setSelectedCategoryFilter('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 ${
+              selectedCategoryFilter === 'all'
+                ? 'bg-black text-white shadow-xs'
+                : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'
+            }`}
+          >
+            <span>All Sections</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                selectedCategoryFilter === 'all' ? 'bg-white/20' : 'bg-gray-200 text-gray-800'
+              }`}
+            >
+              {Object.keys(selectedAnswers).length}/{questions.length}
+            </span>
+          </button>
+
+          {categoriesPresent.map((cat) => {
+            const catQuestions = questions.filter((q) => q.category === cat);
+            const answeredInCat = catQuestions.filter(
+              (q) => selectedAnswers[questions.indexOf(q)] !== undefined
+            ).length;
+            const isSelected = selectedCategoryFilter === cat;
+
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => {
+                  setSelectedCategoryFilter(cat);
+                  // Jump to the first question in that section
+                  const firstIdx = questions.findIndex((q) => q.category === cat);
+                  if (firstIdx !== -1) setCurrentIndex(firstIdx);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 ${
+                  isSelected
+                    ? 'bg-black text-white shadow-xs'
+                    : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'
+                }`}
+              >
+                <span>{CATEGORY_ICONS[cat] || '📌'}</span>
+                <span>{cat}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    isSelected ? 'bg-white/20' : 'bg-gray-200 text-gray-800'
+                  }`}
+                >
+                  {answeredInCat}/{catQuestions.length}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Main Test Layout: Question Area + Question Palette */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left 3 cols: Active Question Card */}
         <div className="lg:col-span-3 space-y-5">
           <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-7 space-y-6 shadow-sm">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-gray-400">
                   Question {currentIndex + 1} of {questions.length}
                 </span>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-gray-100 text-gray-700">
-                  {currentQ.category}
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1">
+                  <span>{CATEGORY_ICONS[currentQ.category] || '📌'}</span>
+                  <span>{currentQ.category}</span>
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-xs self-start sm:self-auto">
                 <span className="text-emerald-700 font-semibold">+1.0 Mark</span>
                 <span className="text-gray-300">•</span>
                 <span className="text-rose-700 font-semibold">-0.25 Negative</span>
@@ -277,7 +375,7 @@ export function Round1Screening({
                     type="button"
                     disabled={isSubmitting}
                     onClick={handleSubmitExam}
-                    className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-sm"
+                    className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-sm cursor-pointer"
                   >
                     {isSubmitting ? 'Evaluating...' : 'Submit Round 1'}
                   </button>
@@ -290,12 +388,17 @@ export function Round1Screening({
         {/* Right 1 col: Question Palette */}
         <div className="space-y-4">
           <div className="bg-white rounded-3xl border border-gray-200 p-5 space-y-4 shadow-sm">
-            <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
-              Question Palette ({Object.keys(selectedAnswers).length}/{questions.length} Answered)
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                Question Palette
+              </h3>
+              <span className="text-[11px] font-mono font-bold text-gray-500">
+                {Object.keys(selectedAnswers).length}/{questions.length} Answered
+              </span>
+            </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              {questions.map((_, idx) => {
+            <div className="grid grid-cols-5 gap-2">
+              {filteredIndices.map((idx) => {
                 const isCurrent = idx === currentIndex;
                 const isAnswered = selectedAnswers[idx] !== undefined;
                 const isFlagged = flaggedIndices.includes(idx);
@@ -325,7 +428,7 @@ export function Round1Screening({
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-md bg-gray-100 border border-gray-300" />
-                <span>Unvisited / Skipped</span>
+                <span>Unvisited</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-md bg-amber-400" />
@@ -337,7 +440,7 @@ export function Round1Screening({
               type="button"
               disabled={isSubmitting}
               onClick={handleSubmitExam}
-              className="w-full py-2.5 rounded-xl bg-black text-white hover:bg-gray-800 text-xs font-bold transition-all shadow-sm"
+              className="w-full py-2.5 rounded-xl bg-black text-white hover:bg-gray-800 text-xs font-bold transition-all shadow-sm cursor-pointer"
             >
               Finish & Submit Round 1
             </button>

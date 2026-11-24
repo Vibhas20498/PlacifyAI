@@ -9,7 +9,11 @@ import {
   DriveCompanyKey,
   CodingProblem,
 } from './types';
-import { COMPANY_DRIVE_PROFILES, MASTER_CODING_PROBLEMS } from './drive-data';
+import {
+  COMPANY_DRIVE_PROFILES,
+  generateRandomizedScreeningPaper,
+  getRandomCodingProblem,
+} from './drive-data';
 
 const STORAGE_KEY = 'placify_placement_war_room_session';
 
@@ -22,6 +26,8 @@ export function initializeDriveSession(
   collegeName: string = 'Campus Engineering Institute'
 ): PlacementDriveSession {
   const company = COMPANY_DRIVE_PROFILES[companyKey] || COMPANY_DRIVE_PROFILES['tcs-digital'];
+  const screeningPaper = generateRandomizedScreeningPaper(companyKey);
+  const codingProblem = getRandomCodingProblem(companyKey);
 
   const session: PlacementDriveSession = {
     company,
@@ -31,6 +37,8 @@ export function initializeDriveSession(
     startTime: Date.now(),
     tabSwitchViolations: 0,
     maxViolationsAllowed: 3,
+    screeningPaper,
+    codingProblem,
     round1: null,
     round2: null,
     round3: null,

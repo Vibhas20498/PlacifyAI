@@ -15,6 +15,7 @@ import {
   Download,
 } from 'lucide-react';
 import { CompanyDriveProfile } from '@/lib/placement-war-room/types';
+import { CompanyLogo } from './CompanyLogos';
 
 interface OfficialOfferLetterProps {
   company: CompanyDriveProfile;
@@ -94,20 +95,20 @@ export function OfficialOfferLetter({
           OFFICIAL OFFER
         </div>
 
-        {/* Company Header */}
+        {/* Company Header with Official Corporate Logo */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b-2 border-gray-900">
-          <div className="space-y-1">
-            <div className="text-2xl font-black tracking-tight uppercase font-heading text-black">
-              {company.name}
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <CompanyLogo companyKey={company.key} size="lg" />
             </div>
             <div className="text-xs text-gray-500 font-mono">
-              CAMPUS RECRUITMENT CELL • REF NO: {offerId}
+              CAMPUS RECRUITMENT DIVISION • REF: {offerId}
             </div>
           </div>
 
-          <div className="text-right text-xs text-gray-600">
+          <div className="text-right text-xs text-gray-600 space-y-0.5">
             <div><strong>Date of Issue:</strong> {currentDate}</div>
-            <div><strong>Batch:</strong> Class of 2026 Graduating Cohort</div>
+            <div><strong>Cohort:</strong> Graduating Batch of 2026</div>
           </div>
         </div>
 
